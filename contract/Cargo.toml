@@ -1,0 +1,3 @@
+[workspace]
+members = ["rustmfa-contract"]
+resolver = "2"
