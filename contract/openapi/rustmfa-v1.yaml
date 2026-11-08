@@ -1,0 +1,467 @@
+openapi: 3.1.0
+info:
+  title: RustMFA API
+  version: 1.0.0
+  description: |
+    Push-MFA contract between the RustMFA Android app and the Rostdav `mfa/` module.
+    Signing formats are defined in docs/superpowers/specs/2026-11-08-rustmfa-android-design.md
+    (sections 4.2 and 4.3) and exercised by contract/vectors/v1.json.
+servers:
+  - url: https://rostdav.example
+    description: Replace with the Rostdav server (HTTPS only)
+
+paths:
+  /api/v1/devices/enroll-token:
+    post:
+      operationId: createEnrollToken
+      summary: Create a single-use enrollment token (5 min) for a QR code
+      security:
+        - WebSession: []
+      responses:
+        "201":
+          description: Token created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EnrollTokenResponse" }
+        "401": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /api/v1/devices/register:
+    post:
+      operationId: registerDevice
+      summary: Register a device using an enrollment token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+      responses:
+        "201":
+          description: Device registered and active
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeviceStatusResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "410": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /api/v1/devices:
+    get:
+      operationId: listDevices
+      summary: List the caller's devices
+      security:
+        - RustMFASig: []
+      responses:
+        "200":
+          description: Devices
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [devices]
+                properties:
+                  devices:
+                    type: array
+                    items: { $ref: "#/components/schemas/Device" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/devices/{device_id}:
+    parameters:
+      - { $ref: "#/components/parameters/DeviceId" }
+    delete:
+      operationId: revokeDevice
+      summary: Revoke a device (server-side block, keys revoked)
+      security:
+        - RustMFASig: []
+      responses:
+        "204": { description: Revoked }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/v1/devices/{device_id}/push-token:
+    parameters:
+      - { $ref: "#/components/parameters/DeviceId" }
+    put:
+      operationId: updatePushToken
+      summary: Update the push channel token
+      security:
+        - RustMFASig: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PushTokenRequest" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeviceStatusResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/devices/{device_id}/rotate-key:
+    parameters:
+      - { $ref: "#/components/parameters/DeviceId" }
+    post:
+      operationId: rotateKey
+      summary: Replace the device public keys (signed with the current request key)
+      security:
+        - RustMFASig: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RotateKeyRequest" }
+      responses:
+        "200":
+          description: Rotated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DeviceStatusResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/mfa/challenges:
+    post:
+      operationId: createChallenge
+      summary: Create an MFA challenge and trigger the push (called by the Rostdav login flow)
+      security:
+        - InternalService: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateChallengeRequest" }
+      responses:
+        "201":
+          description: Challenge created; push sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CreateChallengeResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+    get:
+      operationId: listChallenges
+      summary: List the device's challenges (polling fallback for late pushes)
+      security:
+        - RustMFASig: []
+      parameters:
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/ChallengeStatus" }
+      responses:
+        "200":
+          description: Challenges
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [challenges]
+                properties:
+                  challenges:
+                    type: array
+                    items: { $ref: "#/components/schemas/ChallengeDetails" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/mfa/challenges/{challenge_id}:
+    parameters:
+      - { $ref: "#/components/parameters/ChallengeId" }
+    get:
+      operationId: getChallenge
+      summary: Challenge details for the owning device
+      security:
+        - RustMFASig: []
+      responses:
+        "200":
+          description: Details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChallengeDetails" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "410": { $ref: "#/components/responses/Error" }
+  /api/v1/mfa/challenges/{challenge_id}/approve:
+    parameters:
+      - { $ref: "#/components/parameters/ChallengeId" }
+    post:
+      operationId: approveChallenge
+      summary: Approve with a biometric-gated signature over the canonical message
+      security:
+        - RustMFASig: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApproveRequest" }
+      responses:
+        "200":
+          description: Approved; challenge consumed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChallengeStatusResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "410": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /api/v1/mfa/challenges/{challenge_id}/deny:
+    parameters:
+      - { $ref: "#/components/parameters/ChallengeId" }
+    post:
+      operationId: denyChallenge
+      summary: Deny with a signature over the canonical message
+      security:
+        - RustMFASig: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DenyRequest" }
+      responses:
+        "200":
+          description: Denied
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChallengeStatusResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "410": { $ref: "#/components/responses/Error" }
+  /api/v1/audit:
+    get:
+      operationId: listAudit
+      summary: The caller's own audit events
+      security:
+        - RustMFASig: []
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [events]
+                properties:
+                  events:
+                    type: array
+                    items: { $ref: "#/components/schemas/AuditEvent" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    RustMFASig:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        `RustMFA-Sig device_id="…",ts="…",nonce="…",sig="…"`
+        `ts` is Unix seconds as a decimal string (skew limit 60 s); a `nonce` is accepted once per
+        device within 5 minutes. `sig` is a raw 64-byte R||S ES256 signature (base64url, no padding)
+        made with the device `request_key` over
+        `METHOD \n PATH-with-query \n ts \n nonce \n base64url(sha256(body))`.
+    WebSession:
+      type: apiKey
+      in: cookie
+      name: rostdav_session
+      description: Existing Rostdav web session of the logged-in user.
+    InternalService:
+      type: http
+      scheme: bearer
+      description: Server-side call from the Rostdav login flow; never exposed to devices.
+
+  parameters:
+    DeviceId:
+      name: device_id
+      in: path
+      required: true
+      schema: { type: string }
+    ChallengeId:
+      name: challenge_id
+      in: path
+      required: true
+      schema: { type: string }
+
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  schemas:
+    ErrorCode:
+      type: string
+      enum:
+        - INVALID_REQUEST
+        - UNAUTHENTICATED
+        - DEVICE_NOT_AUTHORIZED
+        - DEVICE_REVOKED
+        - RESOURCE_NOT_FOUND
+        - CHALLENGE_ALREADY_CONSUMED
+        - CHALLENGE_NUMBER_MISMATCH
+        - CHALLENGE_EXPIRED
+        - RATE_LIMITED
+        - INTERNAL_ERROR
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { $ref: "#/components/schemas/ErrorCode" }
+            message: { type: string, description: "Never contains secrets or key material" }
+    EnrollTokenResponse:
+      type: object
+      required: [enroll_token, expires_in_seconds]
+      properties:
+        enroll_token: { type: string }
+        expires_in_seconds: { type: integer, const: 300 }
+    RegisterRequest:
+      type: object
+      required:
+        - enroll_token
+        - device_name
+        - request_public_key
+        - approval_public_key
+        - key_algorithm
+        - attestation_chain
+        - push_channel
+        - push_token
+      properties:
+        enroll_token: { type: string }
+        device_name: { type: string }
+        request_public_key:
+          type: string
+          description: base64 (standard) X.509 SubjectPublicKeyInfo DER; signs request auth, no biometric gate
+        approval_public_key:
+          type: string
+          description: base64 (standard) X.509 SubjectPublicKeyInfo DER; biometric-gated, signs challenges
+        key_algorithm: { type: string, const: ES256 }
+        attestation_chain:
+          type: array
+          description: Base64 DER certificates, leaf first, for the approval key
+          items: { type: string }
+        push_channel: { $ref: "#/components/schemas/PushChannel" }
+        push_token: { type: string }
+    PushChannel:
+      type: string
+      enum: [fcm, unifiedpush]
+    PushTokenRequest:
+      type: object
+      required: [push_channel, push_token]
+      properties:
+        push_channel: { $ref: "#/components/schemas/PushChannel" }
+        push_token: { type: string }
+    RotateKeyRequest:
+      type: object
+      required: [request_public_key, approval_public_key, attestation_chain]
+      properties:
+        request_public_key: { type: string }
+        approval_public_key: { type: string }
+        attestation_chain:
+          type: array
+          items: { type: string }
+    DeviceStatus:
+      type: string
+      enum: [pending_verification, active, revoked]
+    DeviceStatusResponse:
+      type: object
+      required: [device_id, status]
+      properties:
+        device_id: { type: string }
+        status: { $ref: "#/components/schemas/DeviceStatus" }
+    Device:
+      type: object
+      required: [device_id, device_name, status, push_channel, created_at]
+      properties:
+        device_id: { type: string }
+        device_name: { type: string }
+        status: { $ref: "#/components/schemas/DeviceStatus" }
+        push_channel: { $ref: "#/components/schemas/PushChannel" }
+        hardware_backed: { type: boolean }
+        strongbox: { type: boolean }
+        created_at: { type: string, format: date-time }
+        last_seen_at: { type: [string, "null"], format: date-time }
+    CreateChallengeRequest:
+      type: object
+      required: [login_id, device_id]
+      properties:
+        login_id: { type: string }
+        device_id: { type: string }
+    CreateChallengeResponse:
+      type: object
+      required: [challenge_id, status, expires_in_seconds, number]
+      properties:
+        challenge_id: { type: string }
+        status: { $ref: "#/components/schemas/ChallengeStatus" }
+        expires_in_seconds: { type: integer, description: "Default 90, configurable" }
+        number:
+          type: integer
+          minimum: 10
+          maximum: 99
+          description: Shown to the user in the login UI only; never sent to the device as the answer
+    ChallengeStatus:
+      type: string
+      enum: [pending, approved, denied, expired]
+    ChallengeStatusResponse:
+      type: object
+      required: [challenge_id, status]
+      properties:
+        challenge_id: { type: string }
+        status: { $ref: "#/components/schemas/ChallengeStatus" }
+    ChallengeDetails:
+      type: object
+      required: [challenge_id, service_name, login_device, created_at, expires_at, status, candidate_numbers, nonce, login_id, audience]
+      properties:
+        challenge_id: { type: string }
+        service_name: { type: string }
+        login_device: { type: string }
+        approximate_location: { type: [string, "null"], description: "IP-based, approximate" }
+        created_at: { type: string, format: date-time }
+        expires_at: { type: string, description: "RFC 3339 UTC ending in Z" }
+        status: { $ref: "#/components/schemas/ChallengeStatus" }
+        candidate_numbers:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items: { type: integer }
+        nonce: { type: string }
+        login_id: { type: string }
+        audience: { type: string }
+    ApproveRequest:
+      type: object
+      required: [device_id, selected_number, signature]
+      properties:
+        device_id: { type: string }
+        selected_number: { type: integer }
+        signature:
+          type: string
+          description: raw 64-byte R||S ES256 over the canonical challenge message, base64url no padding; DER is rejected
+    DenyRequest:
+      type: object
+      required: [device_id, signature]
+      properties:
+        device_id: { type: string }
+        signature:
+          type: string
+          description: Same format as ApproveRequest.signature
+    AuditEvent:
+      type: object
+      required: [event, at]
+      properties:
+        event:
+          type: string
+          enum: [device_registered, device_revoked, key_rotated, challenge_created, challenge_approved, challenge_denied, challenge_expired, number_mismatch]
+        at: { type: string, format: date-time }
+        device_id: { type: [string, "null"] }
+        detail: { type: [string, "null"] }

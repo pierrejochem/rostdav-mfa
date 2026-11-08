@@ -86,7 +86,7 @@ Settings contain security (biometric requirement, app lock), notifications, TOTP
 ### 4.1 Enrollment
 
 1. A logged-in web session calls `POST /api/v1/devices/enroll-token`. The server returns a single-use token valid 5 minutes, rendered as a QR code.
-2. The app scans the QR, creates the Keystore key, and calls `POST /api/v1/devices/register` with the token, `device_name`, `public_key`, `key_algorithm: "ES256"`, `attestation_chain`, `push_channel` (`fcm` | `unifiedpush`), and `push_token`.
+2. The app scans the QR, creates two Keystore keys (see 4.2), and calls `POST /api/v1/devices/register` with `enroll_token`, `device_name`, `request_public_key`, `approval_public_key`, `key_algorithm: "ES256"`, `attestation_chain` (for the approval key), `push_channel` (`fcm` | `unifiedpush`), and `push_token`. Public keys are base64 (standard alphabet) of the X.509 SubjectPublicKeyInfo DER, which is what Android Keystore exports.
 3. The server validates the token and the attestation chain, then sets the device to `active`. `register` is the only unauthenticated call, and only with a valid token.
 
 **Attestation policy (default).** The key attestation challenge is the hash of the enroll token. The chain must verify to a Google attestation root and show a hardware-backed key (TEE or StrongBox). Software-only keys are rejected. The policy is configurable per deployment, for example to allow GrapheneOS or custom ROM attestation roots.
@@ -105,7 +105,9 @@ Authorization: RustMFA-Sig device_id="…",ts="…",nonce="…",sig="…"
 METHOD \n PATH-with-query \n ts \n nonce \n base64url(sha256(body))
 ```
 
-The server rejects timestamps more than 60 seconds off, and any nonce seen in the last 5 minutes for that device. This covers GET, approve, and deny.
+`ts` is Unix seconds as a decimal string. The server rejects timestamps more than 60 seconds off, and any nonce seen in the last 5 minutes for that device. This covers GET, approve, and deny.
+
+The machine-readable contract is `contract/openapi/rustmfa-v1.yaml`. `POST /mfa/challenges` is called by the Rostdav login flow with a server-side credential, and `POST /devices/enroll-token` by a logged-in web session. Neither is a device call, so neither uses the device signature.
 
 This signature is not biometric-gated, so the key used for request auth is a second, non-biometric Keystore key (`request_key`) registered alongside the biometric-gated `approval_key`. `register` therefore carries two public keys. Only `approval_key` signs challenge messages (4.3).
 
