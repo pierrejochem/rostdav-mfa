@@ -15,7 +15,7 @@
 ## Global Constraints
 
 Rostdav rules (from its `AGENTS.md`, binding):
-- Change to authentication needs the owner's approval (approval point 3). Task 1 ends with it. No code before ADR 0010 is **Accepted**.
+- Change to authentication needs the owner's approval (approval point 3). Task 1 ends with it. No code before ADR 0014 is **Accepted**.
 - Protocol crates never access the database. Authorization only through `authorize()` in `rostdav-app`. No `unwrap`/`expect` on runtime input. Typed errors with context.
 - Tokens stored only hashed (`secrets::hash_token`), compared in constant time. No tokens, signatures, push tokens, or keys in logs.
 - Parameterised queries only. Every foreign key column has a plain index (guarded by `every_foreign_key_has_a_plain_index_for_cascades`).
@@ -61,19 +61,19 @@ Contract values (verbatim from the spec):
 - [ ] **Step 5: Run** `cargo test -p rustmfa-contract`. Expected: all PASS.
 - [ ] **Step 6: Commit** `git commit -am "docs(contract): challenge creation is in-process; Turso"`.
 
-### Task 1: ADR 0010 and owner approval (repo `rostdav`)
+### Task 1: ADR 0014 and owner approval (repo `rostdav`)
 
 **Files:**
-- Create: `docs/adr/0010-push-mfa.md`
+- Create: `docs/adr/0014-push-mfa.md`
 - Modify: `docs/plan.md` (new milestone M14 open, approval point 3 pending)
 
 **Interfaces:**
 - Produces: an accepted ADR that every later task cites.
 
 - [ ] **Step 1: `git switch -c feat/push-mfa`** in `/home/jochem/Repositories/rostdav`. Run `just check`. Expected: green. If red, stop and report.
-- [ ] **Step 2: Write ADR 0010** in the style of ADR 0007: Context (the owner's own authenticator app, spec path), Decision (device keys, request auth, challenges, number matching, attestation default, `rostdav-mfa-api` crate, in-process challenge creation, how it joins the sign-in as an alternative second factor next to TOTP, left to Plan 2b), Storage (the four tables of Task 3), Rules (all contract values above), Dependencies with justification (`rustmfa-contract`, `x509-cert`, `der`, `rcgen` dev-only), Out of scope (FCM, UnifiedPush, web pages, key rotation UI), Consequences (acceptance-test list = this plan's Review Focus). Record the contract-crate decision with these options, recommending (a): (a) git dependency on the `rostdav-mfa` repo pinned by revision, with a local `[patch]` during development; (b) move the crate into Rostdav; (c) vendored copy. Option (a) needs that repo on GitHub first, which is the owner's call.
+- [ ] **Step 2: Write ADR 0014** in the style of ADR 0007: Context (the owner's own authenticator app, spec path), Decision (device keys, request auth, challenges, number matching, attestation default, `rostdav-mfa-api` crate, in-process challenge creation, how it joins the sign-in as an alternative second factor next to TOTP, left to Plan 2b), Storage (the four tables of Task 3), Rules (all contract values above), Dependencies with justification (`rustmfa-contract`, `x509-cert`, `der`, `rcgen` dev-only), Out of scope (FCM, UnifiedPush, web pages, key rotation UI), Consequences (acceptance-test list = this plan's Review Focus). Record the contract-crate decision with these options, recommending (a): (a) git dependency on the `rostdav-mfa` repo pinned by revision, with a local `[patch]` during development; (b) move the crate into Rostdav; (c) vendored copy. Option (a) needs that repo on GitHub first, which is the owner's call.
 - [ ] **Step 3: Commit** the ADR with status `Proposed`.
-- [ ] **Step 4: STOP.** Ask the owner to accept ADR 0010 (approval point 3) and to answer the contract-crate question. Continue only after status is `Accepted`.
+- [ ] **Step 4: STOP.** Ask the owner to accept ADR 0014 (approval point 3) and to answer the contract-crate question. Continue only after status is `Accepted`.
 
 ### Task 2: Wire `rustmfa-contract` and the `[mfa]` configuration
 
@@ -90,7 +90,7 @@ Contract values (verbatim from the spec):
 
 - [ ] **Step 1: Write the failing tests:** `mfa_defaults_match_spec` (default config gives 90, 300, `"rostdav"`, `Required`), `mfa_section_overrides_defaults` (TOML `[mfa] challenge_ttl_seconds = 60` gives 60), `mfa_rejects_ttl_below_10_or_above_300` (config load error naming the key).
 - [ ] **Step 2: Run** `cargo test -p rostdav mfa_ -- --nocapture`. Expected: FAIL, no `mfa` field.
-- [ ] **Step 3: Implement** the config section `[mfa]` (`challenge_ttl_seconds`, `enroll_ttl_seconds`, `audience`, `attestation = "required" | "off"`), validation, and pass it into `AppState` the way the existing `AuditOptions` is passed. Add the dependency per ADR 0010 and a smoke compile `use rustmfa_contract::canonical_message` in `mod.rs`.
+- [ ] **Step 3: Implement** the config section `[mfa]` (`challenge_ttl_seconds`, `enroll_ttl_seconds`, `audience`, `attestation = "required" | "off"`), validation, and pass it into `AppState` the way the existing `AuditOptions` is passed. Add the dependency per ADR 0014 and a smoke compile `use rustmfa_contract::canonical_message` in `mod.rs`.
 - [ ] **Step 4: Document** the section in `rostdav.example.toml` and `docs/admin.md`.
 - [ ] **Step 5: Run** `just check`. Expected: PASS.
 - [ ] **Step 6: Commit** `feat(mfa): configuration and contract dependency`.
@@ -116,7 +116,7 @@ Contract values (verbatim from the spec):
 - [ ] **Step 2: Run** `cargo test -p rostdav-meta push_mfa`. Expected: FAIL, tables missing.
 - [ ] **Step 3: Write the migration and implement the methods** in the style of `two_factor.rs` (`sql::query(...).bind(...)`, `err()` mapping). Concurrency note: use `Db::writer`/transaction as the existing code does for multi-statement changes; each method here is one statement.
 - [ ] **Step 4: Run** `cargo test -p rostdav-meta`. Expected: PASS including `every_foreign_key_has_a_plain_index_for_cascades`. Check `EXPLAIN QUERY PLAN` for the pending-challenges query and note the result in a comment if the planner ignores an index.
-- [ ] **Step 5: Commit** `feat(mfa): schema and repository (ADR 0010)`.
+- [ ] **Step 5: Commit** `feat(mfa): schema and repository (ADR 0014)`.
 
 ### Task 4: Attestation verification
 
@@ -135,7 +135,7 @@ Contract values (verbatim from the spec):
 - [ ] **Step 1: Write the failing tests** using `rcgen` to build synthetic chains (root, intermediate, leaf) with the Android key-description extension (OID `1.3.6.1.4.1.11129.2.1.17`, DER sequence: attestationVersion INTEGER, attestationSecurityLevel ENUMERATED, keymasterVersion INTEGER, keymasterSecurityLevel ENUMERATED, attestationChallenge OCTET STRING, uniqueId OCTET STRING, empty softwareEnforced and teeEnforced SEQUENCEs): `accepts_tee_chain` (level 1 gives `hardware_backed`, not `strongbox`), `accepts_strongbox_chain` (level 2 gives both), `rejects_software_level` (level 0), `rejects_wrong_challenge`, `rejects_leaf_key_mismatch` (leaf SPKI differs from `approval_spki_b64`), `rejects_unknown_root`, `rejects_broken_signature_in_chain`, `rejects_expired_certificate`, `rejects_missing_extension`, `rejects_chain_longer_than_8`.
 - [ ] **Step 2: Run** `cargo test -p rostdav-app attestation`. Expected: FAIL, function missing.
 - [ ] **Step 3: Implement `verify_attestation`.** Decode each certificate, check validity at `now`, verify each certificate's signature with its issuer's key (ECDSA P-256/P-384 and RSA as Android chains use both; use the smallest RustCrypto set already in the lock file and justify new ones in the ADR), require the last certificate to equal or be signed by a trust root, parse the extension, enforce level and challenge, compare the leaf SPKI. Constant-time comparison for the challenge.
-- [ ] **Step 4: `google_roots()`:** embed the current Google hardware attestation root certificates. Fetch them from Google's published key-attestation documentation at implementation time, record the source URL and each SHA-256 fingerprint in ADR 0010 and in a comment, and add the test `google_roots_parse_and_are_self_signed`. Never paste certificates from memory.
+- [ ] **Step 4: `google_roots()`:** embed the current Google hardware attestation root certificates. Fetch them from Google's published key-attestation documentation at implementation time, record the source URL and each SHA-256 fingerprint in ADR 0014 and in a comment, and add the test `google_roots_parse_and_are_self_signed`. Never paste certificates from memory.
 - [ ] **Step 5: Run** `just check`. Expected: PASS.
 - [ ] **Step 6: Commit** `feat(mfa): key attestation verification`.
 
@@ -251,7 +251,7 @@ Contract values (verbatim from the spec):
 ### Task 10: Documentation, changelog, and the container check
 
 **Files:**
-- Modify: `CHANGELOG.md`, `CLAUDE.md` (current state), `docs/security.md`, `docs/admin.md`, `docs/plan.md`, `docs/adr/0010-push-mfa.md` (status stays Accepted, add implementation notes)
+- Modify: `CHANGELOG.md`, `CLAUDE.md` (current state), `docs/security.md`, `docs/admin.md`, `docs/plan.md`, `docs/adr/0014-push-mfa.md` (status stays Accepted, add implementation notes)
 
 - [ ] **Step 1: Write the documentation tests first:** if the repo has a docs consistency check (search `just --list` and `scripts/`), run it and expect it to flag the missing `[mfa]` and `mfa-api` mentions; otherwise skip this step and say so.
 - [ ] **Step 2: Update the docs.** `docs/security.md`: threat notes (push is only a hint, number matching, attestation default, hashed enroll tokens, nonce window). `docs/admin.md`: `[mfa]` settings, attestation policy `off` for custom ROMs with the trade-off. `CLAUDE.md` current state: M14 backend implemented, login integration and FCM pending in Plan 2b. `CHANGELOG.md` under Unreleased.
