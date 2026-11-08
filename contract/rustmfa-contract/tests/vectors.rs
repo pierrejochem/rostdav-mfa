@@ -68,7 +68,8 @@ fn vectors_cover_required_cases() {
         .chain(v["request_cases"].as_array().unwrap())
         .map(|c| s(c, "name")).collect();
     for want in ["valid_challenge", "newline_in_nonce", "offset_expiry", "der_signature_instead_of_raw",
-        "wrong_login_id", "wrong_device_id", "request_with_query", "request_with_body"] {
+        "wrong_login_id", "wrong_device_id", "request_with_query", "request_with_body",
+        "expiry_fraction", "expiry_feb_31", "expiry_leap_second", "expiry_lowercase_z", "expiry_leap_day_ok"] {
         assert!(names.contains(&want), "missing case {want}");
     }
 }

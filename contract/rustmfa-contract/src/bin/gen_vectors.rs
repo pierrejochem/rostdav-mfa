@@ -34,6 +34,11 @@ fn main() {
     let signed_but_altered = |name: &str, f: Value| {
         json!({"name":name,"fields":f,"message":msg_of(&f).unwrap(),"signature_b64url":good_raw,"expect":"VerifyFailed"})
     };
+    let signed_ok = |name: &str, f: Value| {
+        let m = msg_of(&f).unwrap();
+        let sig: Signature = sk.sign(m.as_bytes());
+        json!({"name":name,"fields":f,"message":m,"signature_b64url":raw(&sig),"expect":"ok"})
+    };
     let rejected = |name: &str, f: Value, expect: &str| {
         json!({"name":name,"fields":f,"message":"","signature_b64url":"","expect":expect})
     };
@@ -45,6 +50,11 @@ fn main() {
         rejected("offset_expiry", fields("login_7f21", "dev_7f21", "n0nce", "2026-10-28T16:03:30+01:00"), "InvalidExpiresAt"),
         json!({"name":"der_signature_instead_of_raw","fields":good,"message":good_msg,
                "signature_b64url":good_der,"expect":"BadSignatureEncoding"}),
+        rejected("expiry_fraction", fields("login_7f21", "dev_7f21", "n0nce", "2026-10-28T15:03:30.123Z"), "InvalidExpiresAt"),
+        rejected("expiry_feb_31", fields("login_7f21", "dev_7f21", "n0nce", "2026-02-31T00:00:00Z"), "InvalidExpiresAt"),
+        rejected("expiry_leap_second", fields("login_7f21", "dev_7f21", "n0nce", "2026-10-28T15:03:60Z"), "InvalidExpiresAt"),
+        rejected("expiry_lowercase_z", fields("login_7f21", "dev_7f21", "n0nce", "2026-10-28T15:03:30z"), "InvalidExpiresAt"),
+        signed_ok("expiry_leap_day_ok", fields("login_7f21", "dev_7f21", "n0nce", "2028-02-29T00:00:00Z")),
         signed_but_altered("wrong_login_id", fields("login_OTHER", "dev_7f21", "n0nce", "2026-10-28T15:03:30Z")),
         signed_but_altered("wrong_device_id", fields("login_7f21", "dev_OTHER", "n0nce", "2026-10-28T15:03:30Z")),
     ];

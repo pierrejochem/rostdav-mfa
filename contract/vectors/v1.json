@@ -58,6 +58,76 @@
       "signature_b64url": "MEYCIQCIADpoJG5EPpJicg-VHNsvDU56LWftcy_4-E5iM5LHrwIhAOD2oLLPmi7ShHBnfoC8dv_U7LrK4nTGZHYlxGZL4cCA"
     },
     {
+      "expect": "InvalidExpiresAt",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2026-10-28T15:03:30.123Z",
+        "login_id": "login_7f21",
+        "nonce": "n0nce"
+      },
+      "message": "",
+      "name": "expiry_fraction",
+      "signature_b64url": ""
+    },
+    {
+      "expect": "InvalidExpiresAt",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2026-02-31T00:00:00Z",
+        "login_id": "login_7f21",
+        "nonce": "n0nce"
+      },
+      "message": "",
+      "name": "expiry_feb_31",
+      "signature_b64url": ""
+    },
+    {
+      "expect": "InvalidExpiresAt",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2026-10-28T15:03:60Z",
+        "login_id": "login_7f21",
+        "nonce": "n0nce"
+      },
+      "message": "",
+      "name": "expiry_leap_second",
+      "signature_b64url": ""
+    },
+    {
+      "expect": "InvalidExpiresAt",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2026-10-28T15:03:30z",
+        "login_id": "login_7f21",
+        "nonce": "n0nce"
+      },
+      "message": "",
+      "name": "expiry_lowercase_z",
+      "signature_b64url": ""
+    },
+    {
+      "expect": "ok",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2028-02-29T00:00:00Z",
+        "login_id": "login_7f21",
+        "nonce": "n0nce"
+      },
+      "message": "v1\nch_8a31\nn0nce\nlogin_7f21\ndev_7f21\n2028-02-29T00:00:00Z\nrostdav",
+      "name": "expiry_leap_day_ok",
+      "signature_b64url": "FC8E5nsItxekTW2a8fRYeYShIywRGUpONoZkIMT6D_L3yfR9CvziAWt9A8wWMnxECefQS7pxX3By2c52iH_qUg"
+    },
+    {
       "expect": "VerifyFailed",
       "fields": {
         "audience": "rostdav",

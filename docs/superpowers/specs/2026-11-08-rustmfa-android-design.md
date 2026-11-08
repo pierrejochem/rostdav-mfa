@@ -119,7 +119,7 @@ Signed on approve and on deny, by `approval_key`:
 v1 \n challenge_id \n nonce \n login_id \n device_id \n expires_at \n audience
 ```
 
-Fixed field order, UTF-8, `\n` separators, no trailing newline, `expires_at` as RFC 3339 UTC with `Z`. `audience` is the Rostdav service identifier. The signature is the raw 64-byte R‖S form, base64url-encoded. Android's DER output must be converted before sending, and the server rejects DER.
+Fixed field order, UTF-8, `\n` separators, no trailing newline, `expires_at` in exactly the form `YYYY-MM-DDTHH:MM:SSZ` (UTC, real calendar date, no fraction, no leap second). `audience` is the Rostdav service identifier. The signature is the raw 64-byte R‖S form, base64url-encoded. Android's DER output must be converted before sending, and the server rejects DER.
 
 ### 4.4 Number matching
 

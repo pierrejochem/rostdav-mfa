@@ -17,38 +17,29 @@ fn check(name: &'static str, v: &str) -> Result<(), ContractError> {
     }
 }
 
-/// Accepts `YYYY-MM-DDTHH:MM:SS(.digits)?Z` only.
+/// Accepts exactly `YYYY-MM-DDTHH:MM:SSZ` (20 ASCII bytes): real calendar date,
+/// no fraction, no leap second, so Rust and Kotlin agree on every input.
 fn valid_expiry(s: &str) -> bool {
+    if s.len() != 20 || !s.is_ascii() {
+        return false;
+    }
     let b = s.as_bytes();
-    if b.len() < 20 || b[b.len() - 1] != b'Z' {
+    let separators = b[4] == b'-' && b[7] == b'-' && b[10] == b'T' && b[13] == b':' && b[16] == b':' && b[19] == b'Z';
+    let digits = [0, 1, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18].iter().all(|&i| b[i].is_ascii_digit());
+    if !separators || !digits {
         return false;
     }
-    let digits = |r: std::ops::Range<usize>| b[r].iter().all(u8::is_ascii_digit);
-    let num = |r: std::ops::Range<usize>| s[r].parse::<u32>().unwrap_or(u32::MAX);
-    let shape = digits(0..4)
-        && b[4] == b'-'
-        && digits(5..7)
-        && b[7] == b'-'
-        && digits(8..10)
-        && b[10] == b'T'
-        && digits(11..13)
-        && b[13] == b':'
-        && digits(14..16)
-        && b[16] == b':'
-        && digits(17..19);
-    if !shape {
-        return false;
-    }
-    let frac_ok = match &s[19..s.len() - 1] {
-        "" => true,
-        f => f.len() > 1 && f.starts_with('.') && f[1..].bytes().all(|c| c.is_ascii_digit()),
+    let num = |r: std::ops::Range<usize>| s[r].parse::<u32>().unwrap();
+    let (year, month, day) = (num(0..4), num(5..7), num(8..10));
+    let leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+    let days = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => return false,
     };
-    frac_ok
-        && (1..=12).contains(&num(5..7))
-        && (1..=31).contains(&num(8..10))
-        && num(11..13) < 24
-        && num(14..16) < 60
-        && num(17..19) <= 60
+    (1..=days).contains(&day) && num(11..13) < 24 && num(14..16) < 60 && num(17..19) < 60
 }
 
 pub fn canonical_message(m: &ChallengeMessage) -> Result<String, ContractError> {
