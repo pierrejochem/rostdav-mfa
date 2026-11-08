@@ -1,0 +1,118 @@
+{
+  "challenge_cases": [
+    {
+      "expect": "ok",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2026-10-28T15:03:30Z",
+        "login_id": "login_7f21",
+        "nonce": "n0nce"
+      },
+      "message": "v1\nch_8a31\nn0nce\nlogin_7f21\ndev_7f21\n2026-10-28T15:03:30Z\nrostdav",
+      "name": "valid_challenge",
+      "signature_b64url": "iAA6aCRuRD6SYnIPlRzbLw1Oei1n7XMv-PhOYjOSx6_g9qCyz5ou0oRwZ36AvHb_1Oy6yuJ0xmR2JcRmS-HAgA",
+      "signature_der_b64url": "MEYCIQCIADpoJG5EPpJicg-VHNsvDU56LWftcy_4-E5iM5LHrwIhAOD2oLLPmi7ShHBnfoC8dv_U7LrK4nTGZHYlxGZL4cCA"
+    },
+    {
+      "expect": "InvalidField",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2026-10-28T15:03:30Z",
+        "login_id": "login_7f21",
+        "nonce": "n0\nnce"
+      },
+      "message": "",
+      "name": "newline_in_nonce",
+      "signature_b64url": ""
+    },
+    {
+      "expect": "InvalidExpiresAt",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2026-10-28T16:03:30+01:00",
+        "login_id": "login_7f21",
+        "nonce": "n0nce"
+      },
+      "message": "",
+      "name": "offset_expiry",
+      "signature_b64url": ""
+    },
+    {
+      "expect": "BadSignatureEncoding",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2026-10-28T15:03:30Z",
+        "login_id": "login_7f21",
+        "nonce": "n0nce"
+      },
+      "message": "v1\nch_8a31\nn0nce\nlogin_7f21\ndev_7f21\n2026-10-28T15:03:30Z\nrostdav",
+      "name": "der_signature_instead_of_raw",
+      "signature_b64url": "MEYCIQCIADpoJG5EPpJicg-VHNsvDU56LWftcy_4-E5iM5LHrwIhAOD2oLLPmi7ShHBnfoC8dv_U7LrK4nTGZHYlxGZL4cCA"
+    },
+    {
+      "expect": "VerifyFailed",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_7f21",
+        "expires_at": "2026-10-28T15:03:30Z",
+        "login_id": "login_OTHER",
+        "nonce": "n0nce"
+      },
+      "message": "v1\nch_8a31\nn0nce\nlogin_OTHER\ndev_7f21\n2026-10-28T15:03:30Z\nrostdav",
+      "name": "wrong_login_id",
+      "signature_b64url": "iAA6aCRuRD6SYnIPlRzbLw1Oei1n7XMv-PhOYjOSx6_g9qCyz5ou0oRwZ36AvHb_1Oy6yuJ0xmR2JcRmS-HAgA"
+    },
+    {
+      "expect": "VerifyFailed",
+      "fields": {
+        "audience": "rostdav",
+        "challenge_id": "ch_8a31",
+        "device_id": "dev_OTHER",
+        "expires_at": "2026-10-28T15:03:30Z",
+        "login_id": "login_7f21",
+        "nonce": "n0nce"
+      },
+      "message": "v1\nch_8a31\nn0nce\nlogin_7f21\ndev_OTHER\n2026-10-28T15:03:30Z\nrostdav",
+      "name": "wrong_device_id",
+      "signature_b64url": "iAA6aCRuRD6SYnIPlRzbLw1Oei1n7XMv-PhOYjOSx6_g9qCyz5ou0oRwZ36AvHb_1Oy6yuJ0xmR2JcRmS-HAgA"
+    }
+  ],
+  "key": {
+    "pkcs8_der_b64": "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgERERERERERERERERERERERERERERERERERERERERERGhRANCAAQCF+YX8LZEOSgnj5aZnmmiOk8sFSvfbWzfZuW4AoLU7RlKfevLl3EtLdo8qFqodlpW9F/HWFmWUvKJfGUwbleU",
+    "spki_der_b64": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAhfmF/C2RDkoJ4+WmZ5pojpPLBUr321s32bluAKC1O0ZSn3ry5dxLS3aPKhaqHZaVvRfx1hZllLyiXxlMG5XlA=="
+  },
+  "request_cases": [
+    {
+      "body_b64": "",
+      "expect": "ok",
+      "method": "GET",
+      "name": "request_with_query",
+      "nonce": "req-nonce-1",
+      "path": "/api/v1/mfa/challenges?status=pending",
+      "signature_b64url": "fDXwAqjozlBFm2EzWYtJKTw6Jm-VgOzl7o1v39qdw-RH0fiiZqujlKjZHdxVVzQw4Kx2rxndurJgOQ1wrK4puA",
+      "signing_string": "GET\n/api/v1/mfa/challenges?status=pending\n1793200000\nreq-nonce-1\n47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU",
+      "ts": 1793200000
+    },
+    {
+      "body_b64": "eyJkZXZpY2VfaWQiOiJkZXZfN2YyMSIsInNlbGVjdGVkX251bWJlciI6NDcsInNpZ25hdHVyZSI6IngifQ==",
+      "expect": "ok",
+      "method": "POST",
+      "name": "request_with_body",
+      "nonce": "req-nonce-1",
+      "path": "/api/v1/mfa/challenges/ch_8a31/approve",
+      "signature_b64url": "e5D16va5HjekfFaq-IPvju3jq6VOiowk5kNkB3_XsUnF-YsltWTyMs6AH--fyoSvD98zDO5Tm1YHli2--3EtEw",
+      "signing_string": "POST\n/api/v1/mfa/challenges/ch_8a31/approve\n1793200000\nreq-nonce-1\n0AlFTaSHv2CWaDRki0JYdQK3DUjBmsMs5_8S2vKu72I",
+      "ts": 1793200000
+    }
+  ],
+  "version": 1
+}
