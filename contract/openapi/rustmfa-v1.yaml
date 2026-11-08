@@ -123,25 +123,6 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
   /api/v1/mfa/challenges:
-    post:
-      operationId: createChallenge
-      summary: Create an MFA challenge and trigger the push (called by the Rostdav login flow)
-      security:
-        - InternalService: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/CreateChallengeRequest" }
-      responses:
-        "201":
-          description: Challenge created; push sent
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/CreateChallengeResponse" }
-        "400": { $ref: "#/components/responses/Error" }
-        "401": { $ref: "#/components/responses/Error" }
-        "429": { $ref: "#/components/responses/Error" }
     get:
       operationId: listChallenges
       summary: List the device's challenges (polling fallback for late pushes)
@@ -272,10 +253,6 @@ components:
       in: cookie
       name: rostdav_session
       description: Existing Rostdav web session of the logged-in user.
-    InternalService:
-      type: http
-      scheme: bearer
-      description: Server-side call from the Rostdav login flow; never exposed to devices.
 
   parameters:
     DeviceId:
@@ -392,24 +369,6 @@ components:
         strongbox: { type: boolean }
         created_at: { type: string, format: date-time }
         last_seen_at: { type: [string, "null"], format: date-time }
-    CreateChallengeRequest:
-      type: object
-      required: [login_id, device_id]
-      properties:
-        login_id: { type: string }
-        device_id: { type: string }
-    CreateChallengeResponse:
-      type: object
-      required: [challenge_id, status, expires_in_seconds, number]
-      properties:
-        challenge_id: { type: string }
-        status: { $ref: "#/components/schemas/ChallengeStatus" }
-        expires_in_seconds: { type: integer, description: "Default 90, configurable" }
-        number:
-          type: integer
-          minimum: 10
-          maximum: 99
-          description: Shown to the user in the login UI only; never sent to the device as the answer
     ChallengeStatus:
       type: string
       enum: [pending, approved, denied, expired]

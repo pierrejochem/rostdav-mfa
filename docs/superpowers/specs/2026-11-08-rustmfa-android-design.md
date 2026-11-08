@@ -56,7 +56,9 @@ Kotlin, Jetpack Compose, Material 3, min SDK 28 (StrongBox API level).
 
 ### 2.2 Rostdav `mfa/` module
 
-Axum, SQLx, PostgreSQL. Submodules: `devices`, `challenges`, `crypto` (ES256 verify), `push` (`PushChannel` trait, FCM adapter), `audit`.
+Axum, with storage through Rostdav's own database layer (`rostdav_meta::sql`, Turso, ADR 0008). The logic lives in a `push_mfa` module of `rostdav-app`, the HTTP API in a new protocol crate `rostdav-mfa-api`. Submodules: `devices`, `challenges`, `attestation`, `push` (`PushChannel` trait, FCM adapter), audit through the existing audit log.
+
+Challenge creation is an in-process call from the Rostdav login flow, not an HTTP endpoint. The login flow picks one explicit device (the most recently seen active one) and creates a challenge for it.
 
 The login flow must not issue a full access token until its challenge is `approved`. Challenge creation, signature verification, and login release are bound to the same `login_id`. They cannot run independently.
 
@@ -107,7 +109,7 @@ METHOD \n PATH-with-query \n ts \n nonce \n base64url(sha256(body))
 
 `ts` is Unix seconds as a decimal string. The server rejects timestamps more than 60 seconds off, and any nonce seen in the last 5 minutes for that device. This covers GET, approve, and deny.
 
-The machine-readable contract is `contract/openapi/rustmfa-v1.yaml`. `POST /mfa/challenges` is called by the Rostdav login flow with a server-side credential, and `POST /devices/enroll-token` by a logged-in web session. Neither is a device call, so neither uses the device signature.
+The machine-readable contract is `contract/openapi/rustmfa-v1.yaml`. Challenge creation is an in-process call of the Rostdav login flow and has no HTTP endpoint. `POST /devices/enroll-token` is called by a logged-in web session (cookie and CSRF protection, served by the web crate). It is not a device call, so it does not use the device signature.
 
 This signature is not biometric-gated, so the key used for request auth is a second, non-biometric Keystore key (`request_key`) registered alongside the biometric-gated `approval_key`. `register` therefore carries two public keys. Only `approval_key` signs challenge messages (4.3).
 
@@ -127,18 +129,17 @@ The server generates a 2-digit number per challenge and shows it in the login UI
 
 ### 4.5 Endpoints
 
-From the PDF, unchanged in meaning:
+From the PDF, unchanged in meaning. Challenge creation (`POST /mfa/challenges` in the PDF) is not an HTTP endpoint, see 2.2.:
 
 | Method | Path | Function |
 |---|---|---|
 | POST | `/devices/register` | Register device (with enroll token) |
 | PUT | `/devices/{device_id}/push-token` | Update push token |
-| POST | `/mfa/challenges` | Create challenge, trigger push (server-side, called by the login flow) |
 | GET | `/mfa/challenges/{challenge_id}` | Challenge details |
 | POST | `/mfa/challenges/{challenge_id}/approve` | Signed approval |
 | POST | `/mfa/challenges/{challenge_id}/deny` | Signed denial |
 
-Added:
+Added (the contract has 11 operations in total):
 
 | Method | Path | Function |
 |---|---|---|

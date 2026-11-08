@@ -5,10 +5,9 @@ fn doc() -> Value {
     serde_yaml::from_str(&std::fs::read_to_string(p).expect("openapi/rustmfa-v1.yaml missing")).unwrap()
 }
 
-const ENDPOINTS: [(&str, &str); 12] = [
+const ENDPOINTS: [(&str, &str); 11] = [
     ("post", "/api/v1/devices/register"),
     ("put", "/api/v1/devices/{device_id}/push-token"),
-    ("post", "/api/v1/mfa/challenges"),
     ("get", "/api/v1/mfa/challenges/{challenge_id}"),
     ("post", "/api/v1/mfa/challenges/{challenge_id}/approve"),
     ("post", "/api/v1/mfa/challenges/{challenge_id}/deny"),
@@ -80,10 +79,19 @@ fn device_endpoints_declare_signature_security() {
         let sec = op["security"].as_sequence().unwrap_or_else(|| panic!("{m} {p}: no security"));
         let names: Vec<String> = sec.iter().flat_map(|e| e.as_mapping().unwrap().keys())
             .map(|k| k.as_str().unwrap().to_owned()).collect();
-        if non_device.contains(&p) || (m == "post" && p == "/api/v1/mfa/challenges") {
+        if non_device.contains(&p) {
             assert!(!names.iter().any(|n| n == "RustMFASig"), "{m} {p} must not need device signature");
         } else {
             assert_eq!(names, vec!["RustMFASig"], "{m} {p}");
         }
     }
+}
+
+#[test]
+fn create_challenge_is_not_public() {
+    let d = doc();
+    assert!(d["paths"]["/api/v1/mfa/challenges"]["post"].is_null());
+    assert!(d["components"]["securitySchemes"]["InternalService"].is_null());
+    assert!(d["components"]["schemas"]["CreateChallengeRequest"].is_null());
+    assert!(d["components"]["schemas"]["CreateChallengeResponse"].is_null());
 }
