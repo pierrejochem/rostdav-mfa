@@ -129,7 +129,7 @@ The server generates a 2-digit number per challenge and shows it in the login UI
 
 ### 4.5 Endpoints
 
-From the PDF, unchanged in meaning. Challenge creation (`POST /mfa/challenges` in the PDF) is not an HTTP endpoint, see 2.2.:
+From the PDF, unchanged in meaning. Challenge creation (`POST /mfa/challenges` in the PDF) is not an HTTP endpoint, see 2.2:
 
 | Method | Path | Function |
 |---|---|---|
