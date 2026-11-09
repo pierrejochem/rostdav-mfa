@@ -24,8 +24,15 @@ fn valid_expiry(s: &str) -> bool {
         return false;
     }
     let b = s.as_bytes();
-    let separators = b[4] == b'-' && b[7] == b'-' && b[10] == b'T' && b[13] == b':' && b[16] == b':' && b[19] == b'Z';
-    let digits = [0, 1, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18].iter().all(|&i| b[i].is_ascii_digit());
+    let separators = b[4] == b'-'
+        && b[7] == b'-'
+        && b[10] == b'T'
+        && b[13] == b':'
+        && b[16] == b':'
+        && b[19] == b'Z';
+    let digits = [0, 1, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18]
+        .iter()
+        .all(|&i| b[i].is_ascii_digit());
     if !separators || !digits {
         return false;
     }
@@ -51,5 +58,14 @@ pub fn canonical_message(m: &ChallengeMessage) -> Result<String, ContractError> 
     if !valid_expiry(m.expires_at) {
         return Err(ContractError::InvalidExpiresAt);
     }
-    Ok(["v1", m.challenge_id, m.nonce, m.login_id, m.device_id, m.expires_at, m.audience].join("\n"))
+    Ok([
+        "v1",
+        m.challenge_id,
+        m.nonce,
+        m.login_id,
+        m.device_id,
+        m.expires_at,
+        m.audience,
+    ]
+    .join("\n"))
 }

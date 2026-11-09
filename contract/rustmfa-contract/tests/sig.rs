@@ -1,4 +1,7 @@
-use base64::{engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD}, Engine};
+use base64::{
+    engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD},
+    Engine,
+};
 use p256::ecdsa::{signature::Signer, Signature, SigningKey};
 use p256::pkcs8::EncodePublicKey;
 use rustmfa_contract::{der_to_raw, verify_es256_raw, ContractError};
@@ -25,22 +28,34 @@ fn der_signature_is_rejected() {
     let (sk, spki) = key();
     let sig: Signature = sk.sign(b"hello");
     let der = URL_SAFE_NO_PAD.encode(sig.to_der().as_bytes());
-    assert_eq!(verify_es256_raw(&spki, b"hello", &der), Err(ContractError::BadSignatureEncoding));
+    assert_eq!(
+        verify_es256_raw(&spki, b"hello", &der),
+        Err(ContractError::BadSignatureEncoding)
+    );
 }
 
 #[test]
 fn tampered_message_fails() {
     let (sk, spki) = key();
     let sig: Signature = sk.sign(b"hello");
-    assert_eq!(verify_es256_raw(&spki, b"hellp", &b64(&sig)), Err(ContractError::VerifyFailed));
+    assert_eq!(
+        verify_es256_raw(&spki, b"hellp", &b64(&sig)),
+        Err(ContractError::VerifyFailed)
+    );
 }
 
 #[test]
 fn bad_public_key_is_rejected() {
     let (sk, _) = key();
     let sig: Signature = sk.sign(b"hello");
-    assert_eq!(verify_es256_raw("!!!", b"hello", &b64(&sig)), Err(ContractError::BadPublicKey));
-    assert_eq!(verify_es256_raw("AAAA", b"hello", &b64(&sig)), Err(ContractError::BadPublicKey));
+    assert_eq!(
+        verify_es256_raw("!!!", b"hello", &b64(&sig)),
+        Err(ContractError::BadPublicKey)
+    );
+    assert_eq!(
+        verify_es256_raw("AAAA", b"hello", &b64(&sig)),
+        Err(ContractError::BadPublicKey)
+    );
 }
 
 #[test]
@@ -60,7 +75,10 @@ fn der_to_raw_pads_short_integers() {
 
 #[test]
 fn der_to_raw_rejects_garbage() {
-    assert_eq!(der_to_raw(&[1, 2, 3]), Err(ContractError::BadSignatureEncoding));
+    assert_eq!(
+        der_to_raw(&[1, 2, 3]),
+        Err(ContractError::BadSignatureEncoding)
+    );
 }
 
 #[test]

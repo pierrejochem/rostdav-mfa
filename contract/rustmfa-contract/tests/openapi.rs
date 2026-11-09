@@ -2,7 +2,8 @@ use serde_yaml::Value;
 
 fn doc() -> Value {
     let p = concat!(env!("CARGO_MANIFEST_DIR"), "/../openapi/rustmfa-v1.yaml");
-    serde_yaml::from_str(&std::fs::read_to_string(p).expect("openapi/rustmfa-v1.yaml missing")).unwrap()
+    serde_yaml::from_str(&std::fs::read_to_string(p).expect("openapi/rustmfa-v1.yaml missing"))
+        .unwrap()
 }
 
 const ENDPOINTS: [(&str, &str); 11] = [
@@ -45,10 +46,23 @@ fn all_endpoints_present() {
 fn all_error_codes_listed() {
     let d = doc();
     let codes: Vec<&str> = d["components"]["schemas"]["ErrorCode"]["enum"]
-        .as_sequence().unwrap().iter().map(|x| x.as_str().unwrap()).collect();
-    for c in ["INVALID_REQUEST", "UNAUTHENTICATED", "DEVICE_NOT_AUTHORIZED", "DEVICE_REVOKED",
-        "RESOURCE_NOT_FOUND", "CHALLENGE_ALREADY_CONSUMED", "CHALLENGE_NUMBER_MISMATCH",
-        "CHALLENGE_EXPIRED", "RATE_LIMITED", "INTERNAL_ERROR"] {
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_str().unwrap())
+        .collect();
+    for c in [
+        "INVALID_REQUEST",
+        "UNAUTHENTICATED",
+        "DEVICE_NOT_AUTHORIZED",
+        "DEVICE_REVOKED",
+        "RESOURCE_NOT_FOUND",
+        "CHALLENGE_ALREADY_CONSUMED",
+        "CHALLENGE_NUMBER_MISMATCH",
+        "CHALLENGE_EXPIRED",
+        "RATE_LIMITED",
+        "INTERNAL_ERROR",
+    ] {
         assert!(codes.contains(&c), "missing error code {c}");
     }
 }
@@ -56,8 +70,16 @@ fn all_error_codes_listed() {
 #[test]
 fn register_requires_both_keys() {
     let r = required(&doc(), "RegisterRequest");
-    for f in ["enroll_token", "device_name", "request_public_key", "approval_public_key",
-        "key_algorithm", "attestation_chain", "push_channel", "push_token"] {
+    for f in [
+        "enroll_token",
+        "device_name",
+        "request_public_key",
+        "approval_public_key",
+        "key_algorithm",
+        "attestation_chain",
+        "push_channel",
+        "push_token",
+    ] {
         assert!(r.iter().any(|x| x == f), "RegisterRequest lacks {f}");
     }
 }
@@ -76,11 +98,19 @@ fn device_endpoints_declare_signature_security() {
     let non_device = ["/api/v1/devices/register", "/api/v1/devices/enroll-token"];
     for (m, p) in ENDPOINTS {
         let op = &d["paths"][p][m];
-        let sec = op["security"].as_sequence().unwrap_or_else(|| panic!("{m} {p}: no security"));
-        let names: Vec<String> = sec.iter().flat_map(|e| e.as_mapping().unwrap().keys())
-            .map(|k| k.as_str().unwrap().to_owned()).collect();
+        let sec = op["security"]
+            .as_sequence()
+            .unwrap_or_else(|| panic!("{m} {p}: no security"));
+        let names: Vec<String> = sec
+            .iter()
+            .flat_map(|e| e.as_mapping().unwrap().keys())
+            .map(|k| k.as_str().unwrap().to_owned())
+            .collect();
         if non_device.contains(&p) {
-            assert!(!names.iter().any(|n| n == "RustMFASig"), "{m} {p} must not need device signature");
+            assert!(
+                !names.iter().any(|n| n == "RustMFASig"),
+                "{m} {p} must not need device signature"
+            );
         } else {
             assert_eq!(names, vec!["RustMFASig"], "{m} {p}");
         }

@@ -40,5 +40,6 @@ pub fn verify_es256_raw(
         return Err(ContractError::BadSignatureEncoding);
     }
     let sig = Signature::from_slice(&raw).map_err(|_| ContractError::BadSignatureEncoding)?;
-    key.verify(message, &sig).map_err(|_| ContractError::VerifyFailed)
+    key.verify(message, &sig)
+        .map_err(|_| ContractError::VerifyFailed)
 }

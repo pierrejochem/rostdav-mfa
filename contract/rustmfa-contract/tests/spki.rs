@@ -28,7 +28,10 @@ fn garbage_is_rejected() {
 fn trailing_bytes_after_the_key_are_rejected() {
     let mut der = STANDARD.decode(P256).unwrap();
     der.extend([0, 0]);
-    assert_eq!(check_spki(&STANDARD.encode(der)), Err(ContractError::BadPublicKey));
+    assert_eq!(
+        check_spki(&STANDARD.encode(der)),
+        Err(ContractError::BadPublicKey)
+    );
 }
 
 #[test]

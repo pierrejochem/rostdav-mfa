@@ -19,5 +19,7 @@ pub fn request_signing_string(
         return Err(ContractError::InvalidField("nonce"));
     }
     let body_hash = URL_SAFE_NO_PAD.encode(Sha256::digest(body));
-    Ok(format!("{method}\n{path_and_query}\n{ts}\n{nonce}\n{body_hash}"))
+    Ok(format!(
+        "{method}\n{path_and_query}\n{ts}\n{nonce}\n{body_hash}"
+    ))
 }

@@ -12,7 +12,8 @@ fn builds_signing_string_with_empty_body() {
 
 #[test]
 fn keeps_query_string_unchanged() {
-    let s = request_signing_string("GET", "/api/v1/mfa/challenges?status=pending", 1, "n", b"").unwrap();
+    let s = request_signing_string("GET", "/api/v1/mfa/challenges?status=pending", 1, "n", b"")
+        .unwrap();
     assert!(s.contains("\n/api/v1/mfa/challenges?status=pending\n"));
 }
 
