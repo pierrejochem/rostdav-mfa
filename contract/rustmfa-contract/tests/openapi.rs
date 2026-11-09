@@ -125,3 +125,23 @@ fn create_challenge_is_not_public() {
     assert!(d["components"]["schemas"]["CreateChallengeRequest"].is_null());
     assert!(d["components"]["schemas"]["CreateChallengeResponse"].is_null());
 }
+
+/// Rostdav's tests read the contract as JSON, so they need no YAML parser. The mirror must say
+/// the same as the YAML. Regenerate with `UPDATE_OPENAPI_JSON=1 cargo test -p rustmfa-contract
+/// --test openapi json_mirror`.
+#[test]
+fn json_mirror_matches_the_yaml() {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../openapi/rustmfa-v1.json");
+    let yaml: serde_json::Value = serde_yaml::from_value(doc()).unwrap();
+    if std::env::var_os("UPDATE_OPENAPI_JSON").is_some() {
+        let mut text = serde_json::to_string_pretty(&yaml).unwrap();
+        text.push('\n');
+        std::fs::write(path, text).unwrap();
+    }
+    let json: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(path)
+            .expect("openapi/rustmfa-v1.json missing: see the doc comment"),
+    )
+    .unwrap();
+    assert_eq!(json, yaml, "rustmfa-v1.json is out of date");
+}
