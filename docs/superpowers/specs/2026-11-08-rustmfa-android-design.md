@@ -87,7 +87,7 @@ Settings contain security (biometric requirement, app lock), notifications, TOTP
 
 ### 4.1 Enrollment
 
-1. A logged-in web session calls `POST /api/v1/devices/enroll-token`. The server returns a single-use token valid 5 minutes, rendered as a QR code.
+1. A logged-in web session asks for an enrollment token (in Rostdav this is a web page behind the account password, not an HTTP API route). The server returns a single-use token valid 5 minutes, rendered as a QR code. The QR code says `rustmfa://enroll?server=<percent-encoded base URL of the server>&token=<token>`; the page also shows that text for manual entry. The app reads `server` and `token` and uses the server address for all later calls.
 2. The app scans the QR, creates two Keystore keys (see 4.2), and calls `POST /api/v1/devices/register` with `enroll_token`, `device_name`, `request_public_key`, `approval_public_key`, `key_algorithm: "ES256"`, `attestation_chain` (for the approval key), `push_channel` (`fcm` | `unifiedpush`), and `push_token`. Public keys are base64 (standard alphabet) of the X.509 SubjectPublicKeyInfo DER, which is what Android Keystore exports.
 3. The server validates the token and the attestation chain, then sets the device to `active`. `register` is the only unauthenticated call, and only with a valid token.
 
