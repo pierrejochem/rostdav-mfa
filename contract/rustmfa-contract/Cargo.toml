@@ -3,6 +3,8 @@ name = "rustmfa-contract"
 version = "0.1.0"
 edition = "2021"
 description = "Shared RustMFA signing formats, verification, and test vectors"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/pierrejochem/rostdav-mfa"
 
 [dependencies]
 p256 = { version = "0.13", features = ["ecdsa", "pkcs8", "std"] }
