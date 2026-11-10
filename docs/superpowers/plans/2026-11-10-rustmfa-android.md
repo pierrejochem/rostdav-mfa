@@ -44,7 +44,7 @@ Values copied from the spec and the contract; every task includes them.
 
 - The biometric key is invalidated (new fingerprint enrolled) before or during an approval: no crash, no stale approve, the "Gerät neu verbinden" path (Tasks 3, 6, 8).
 - Approve sent twice (double tap, or a retry after a network error): the second answer is `CHALLENGE_ALREADY_CONSUMED`, shown as "Bereits bearbeitet", never a retry loop; a signed answer is not retried after `expires_at` (Task 6).
-- The phone clock is wrong by minutes: requests fail as `UNAUTHENTICATED`; the app corrects its clock from the server's `Date` header and tries once more, then shows a clear hint (Task 2).
+- The phone clock is wrong by minutes: requests fail as `UNAUTHENTICATED`; the app corrects its clock from the server's `Date` header and tries once more, then shows a clear hint (Task 4).
 - A push for a challenge that is unknown, expired or already answered: no crash, no notification left behind (Task 7).
 - A hostile QR code (`http://` in a release build, `javascript:` or another scheme, a token with control characters or 10 000 characters, a server address with credentials): refused before any network call (Task 4).
 - The network fails while the signed approve is in flight: the answer stays in memory only, and killing the app leaves nothing on disk (Task 6).
@@ -233,5 +233,5 @@ Values copied from the spec and the contract; every task includes them.
 
 - **Spec coverage:** 2.1 packages `crypto/` (Task 3), `net/` (Task 4), `push/` (Task 7), `domain/` (Tasks 6, 8), `ui/` (Tasks 5 to 8); section 3 screens 1 to 3 and 5 and 6 (Tasks 5, 6, 8; screen 4 "Add account" belongs to the TOTP plan); 4.1 enrollment (Tasks 3, 4); 4.2, 4.3 (Task 2); 4.4 (Task 6); 4.8 (Task 7); 6 error handling (Tasks 6, 8); 7 testing (the vectors in Task 2, the state machine in Task 6, instrumented tests in Tasks 3, 5, 6, the physical-phone items in Task 9). Not in this plan: section 5 (TOTP vault), UnifiedPush, hardening items beyond `FLAG_SECURE` and the backup rules, store release.
 - **Type consistency:** `DeviceKey`, `ApprovalSigner` and `KeyInvalidatedException` come from Task 3 and are used unchanged in Tasks 4, 6 and 8; `MfaApi` and `ApiError` from Task 4 are used in Tasks 6 to 8; `ChallengeState` from Task 6 in Tasks 7 and 8.
-- **Review Focus mapping:** key invalidation (Tasks 3, 6, 8), double approve and no retry loop (Task 6), clock skew (Task 4, `ClockSkewTest`; the Review Focus line says Task 2 and should say Task 4), stale push (Task 7), hostile QR (Task 4), offline approve in memory (Task 6).
+- **Review Focus mapping:** key invalidation (Tasks 3, 6, 8), double approve and no retry loop (Task 6), clock skew (Task 4, `ClockSkewTest`), stale push (Task 7), hostile QR (Task 4), offline approve in memory (Task 6).
 - **Known soft spots:** the Gradle, AGP and Kotlin versions are chosen in Task 1 from release notes, because they could not be verified here; the biometric prompt, StrongBox and real attestation cannot be proven on an emulator; FCM cannot be tried without a Firebase project.
