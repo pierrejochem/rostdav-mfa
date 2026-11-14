@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RustMFA</string>
+    <string name="nav_home">Übersicht</string>
+    <string name="nav_devices">Geräte</string>
+    <string name="nav_settings">Einstellungen</string>
+    <string name="onboarding_title">Mit dem Server verbinden</string>
+    <string name="onboarding_text">Scanne den QR-Code deines Rostdav-Servers oder gib Adresse und Token von Hand ein.</string>
+    <string name="scan_button">QR-Code scannen</string>
+    <string name="manual_button">Von Hand eingeben</string>
+    <string name="scan_hint">Richte die Kamera auf den QR-Code.</string>
+    <string name="scan_permission_denied">Der Kamerazugriff wurde abgelehnt. Du kannst Adresse und Token trotzdem von Hand eingeben.</string>
+    <string name="manual_server">Serveradresse</string>
+    <string name="manual_token">Einrichtungs-Token</string>
+    <string name="manual_continue">Weiter</string>
+    <string name="name_title">Dieses Telefon benennen</string>
+    <string name="name_label">Gerätename</string>
+    <string name="name_connect">Verbinden</string>
+    <string name="enrolling">Verbinde…</string>
+    <string name="back">Zurück</string>
+    <string name="try_again">Erneut versuchen</string>
+    <string name="home_title">Anmeldeanfragen</string>
+    <string name="home_empty">Gerade keine Anfragen.</string>
+    <string name="home_server">Server: %1$s</string>
+    <string name="devices_title">Geräte</string>
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="approve_title">Anmeldeanfrage</string>
+    <string name="err_bad_link">Dieser Code ist kein gültiger RustMFA-Einrichtungscode.</string>
+    <string name="err_no_secure_lock">Richte in den Telefon-Einstellungen eine Bildschirmsperre und einen Fingerabdruck oder ein Gesicht ein und versuche es dann erneut.</string>
+    <string name="err_network">Der Server ist nicht erreichbar. Prüfe die Adresse und deine Verbindung.</string>
+    <string name="err_storage">Das Telefon konnte die Einrichtung nicht speichern. Entferne es auf der Server-Seite und versuche es erneut.</string>
+    <string name="err_rate_limited">Zu viele Versuche. Warte eine Minute und versuche es erneut.</string>
+    <string name="err_token_rejected">Das Token ist falsch, benutzt oder abgelaufen. Erstelle auf der Server-Seite ein neues.</string>
+    <string name="err_rejected">Der Server hat die Einrichtung abgelehnt.</string>
+</resources>

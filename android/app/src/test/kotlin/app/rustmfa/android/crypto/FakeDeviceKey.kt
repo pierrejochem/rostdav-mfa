@@ -10,7 +10,7 @@ import java.security.spec.ECGenParameterSpec
 import java.util.Base64
 
 /** A [DeviceKey] with software keys, for the JVM tests of later tasks. No biometric prompt, no hardware. */
-class FakeDeviceKey : DeviceKey {
+class FakeDeviceKey(private val failCreate: Boolean = false) : DeviceKey {
     private var request: KeyPair? = null
     private var approval: KeyPair? = null
     private var invalidated = false
@@ -22,6 +22,7 @@ class FakeDeviceKey : DeviceKey {
     override fun exists() = request != null && approval != null
 
     override fun createKeys(enrollToken: String): CreatedKeys {
+        if (failCreate) throw IllegalStateException("no secure lock screen or no enrolled biometric")
         request = newPair()
         approval = newPair()
         invalidated = false
