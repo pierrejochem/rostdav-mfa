@@ -53,4 +53,8 @@
     <string name="result_revoked">Dieses Telefon wurde auf dem Server entfernt.</string>
     <string name="result_failed">Die Anfrage konnte nicht geladen werden.</string>
     <string name="result_done">Fertig</string>
+    <string name="notif_channel">Anmeldeanfragen</string>
+    <string name="notif_title">Anmeldeanfrage</string>
+    <string name="notif_text">%1$s · %2$s</string>
+    <string name="home_notifications_off">Benachrichtigungen sind aus. Neue Anfragen erscheinen nur hier, solange die App offen ist.</string>
 </resources>

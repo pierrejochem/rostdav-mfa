@@ -1,6 +1,23 @@
 package app.rustmfa.android
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.navigation.compose.rememberNavController
+import app.rustmfa.android.net.ChallengeDetails
+import app.rustmfa.android.push.AndroidNotificationSink
+import app.rustmfa.android.push.PendingPoller
+import app.rustmfa.android.push.PushPayload
+import app.rustmfa.android.ui.Dest
+import app.rustmfa.android.ui.HomeScreen
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.fragment.app.FragmentActivity
@@ -21,10 +38,74 @@ import app.rustmfa.android.ui.OnboardingViewModel
 import app.rustmfa.android.ui.RustMfaTheme
 
 class MainActivity : FragmentActivity() {
+    private val openChallenge = mutableStateOf<String?>(null)
+    private val notificationsOff = mutableStateOf(false)
+    private val pendingList = mutableStateOf<List<ChallengeDetails>>(emptyList())
+    private var poller: PendingPoller? = null
+    private var sessionJob: Job? = null
+
+    private val askNotifications =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { refreshNotificationState() }
+
+    private fun refreshNotificationState() {
+        notificationsOff.value = Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+    }
+
+    /** A notification tap names a challenge; anything that is not a plain id is dropped. */
+    private fun takeIntent(i: Intent?) {
+        val id = PushPayload.challengeId(mapOf("challenge_id" to i?.getStringExtra(AndroidNotificationSink.EXTRA_CHALLENGE).orEmpty()))
+        if (id != null) openChallenge.value = id
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        takeIntent(intent)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        poller?.setForeground(true)
+    }
+
+    override fun onStop() {
+        poller?.setForeground(false)
+        super.onStop()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshNotificationState()
+    }
+
+    /** Starts polling and the notification sync for an enrolled phone; safe to call again. */
+    private fun startSession(app: AppContainer, e: Enrollment) {
+        if (sessionJob?.isActive == true) return
+        val p = app.poller(e)
+        poller = p
+        p.setForeground(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+        val n = app.notifier(e)
+        sessionJob = lifecycleScope.launch {
+            launch { p.run() }
+            p.pending.collect { list ->
+                pendingList.value = list
+                n.sync(list)
+            }
+        }
+        val prefs = getSharedPreferences("ui", MODE_PRIVATE)
+        if (Build.VERSION.SDK_INT >= 33 && !prefs.getBoolean("asked_notifications", false) &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            prefs.edit().putBoolean("asked_notifications", true).apply()
+            askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val app = AppContainer(applicationContext)
+        takeIntent(intent)
+        val app = AppContainer.get(applicationContext)
         setContent {
             RustMfaTheme {
                 // null while the store is read; the start destination is chosen once
@@ -33,11 +114,29 @@ class MainActivity : FragmentActivity() {
                     value = (e != null) to e
                 }
                 loaded?.let { (enrolled, enrollment) ->
+                    val nav = rememberNavController()
+                    LaunchedEffect(enrollment) { if (enrollment != null) startSession(app, enrollment) }
+                    val wanted = openChallenge.value
+                    LaunchedEffect(wanted, enrolled) {
+                        if (wanted != null && enrolled) {
+                            nav.navigate(Dest.approve(wanted))
+                            openChallenge.value = null
+                        }
+                    }
                     AppNavigation(
+                        nav = nav,
+                        home = { onOpen ->
+                            HomeScreen(enrollment?.server ?: "", pendingList.value, notificationsOff.value, onOpen)
+                        },
                         enrolled = enrolled,
                         server = enrollment?.server ?: "",
                         version = BuildConfig.VERSION_NAME,
-                        onboarding = { onDone ->
+                        onboarding = { onDone0 ->
+                            val onDone = {
+                                // the new enrollment starts the session; the stored value is read again
+                                lifecycleScope.launch { runCatching { app.store.load() }.getOrNull()?.let { startSession(app, it) } }
+                                onDone0()
+                            }
                             val vm: OnboardingViewModel =
                                 viewModel(factory = viewModelFactory { initializer { OnboardingViewModel(app.enrollmentRepository(), BuildConfig.DEBUG) } })
                             OnboardingScreen(vm, defaultName = Build.MODEL ?: "Phone", onDone = onDone)

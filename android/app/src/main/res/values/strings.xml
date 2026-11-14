@@ -53,4 +53,8 @@
     <string name="result_revoked">This phone was removed on the server.</string>
     <string name="result_failed">The request could not be loaded.</string>
     <string name="result_done">Done</string>
+    <string name="notif_channel">Sign-in requests</string>
+    <string name="notif_title">Sign-in request</string>
+    <string name="notif_text">%1$s · %2$s</string>
+    <string name="home_notifications_off">Notifications are off. New requests only show here while the app is open.</string>
 </resources>

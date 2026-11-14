@@ -65,6 +65,10 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.zxing.core)
 
+    // the fcm flavor only; the default nopush build pulls in no Google service
+    "fcmImplementation"(platform(libs.firebase.bom))
+    "fcmImplementation"(libs.firebase.messaging)
+
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.okhttp.mockwebserver)
@@ -79,4 +83,9 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.uiautomator)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+// The fcm flavor needs the Firebase file of the owner's own project; it is never committed.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

@@ -44,6 +44,7 @@ fun AppNavigation(
     enrolled: Boolean,
     server: String,
     version: String,
+    home: @Composable (onOpen: (String) -> Unit) -> Unit,
     onboarding: @Composable (onDone: () -> Unit) -> Unit,
     approve: @Composable (id: String, onClose: () -> Unit) -> Unit,
     nav: NavHostController = rememberNavController(),
@@ -78,7 +79,7 @@ fun AppNavigation(
                     nav.navigate(Dest.HOME) { popUpTo(Dest.ONBOARDING) { inclusive = true } }
                 }
             }
-            composable(Dest.HOME) { HomeScreen(server) }
+            composable(Dest.HOME) { home { id -> nav.navigate(Dest.approve(id)) } }
             composable(Dest.APPROVE, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
                 approve(e.arguments?.getString("id").orEmpty()) { nav.popBackStack() }
             }
