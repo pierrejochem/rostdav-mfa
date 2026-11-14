@@ -45,6 +45,7 @@ fun AppNavigation(
     server: String,
     version: String,
     onboarding: @Composable (onDone: () -> Unit) -> Unit,
+    approve: @Composable (id: String, onClose: () -> Unit) -> Unit,
     nav: NavHostController = rememberNavController(),
 ) {
     val entry by nav.currentBackStackEntryAsState()
@@ -78,9 +79,8 @@ fun AppNavigation(
                 }
             }
             composable(Dest.HOME) { HomeScreen(server) }
-            composable(Dest.APPROVE, arguments = listOf(navArgument("id") { type = NavType.StringType })) {
-                // Task 6
-                Text(stringResource(R.string.approve_title))
+            composable(Dest.APPROVE, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
+                approve(e.arguments?.getString("id").orEmpty()) { nav.popBackStack() }
             }
             composable(Dest.DEVICES) { Text(stringResource(R.string.devices_title)) } // Task 8
             composable(Dest.SETTINGS) { SettingsScreen(server, version) }

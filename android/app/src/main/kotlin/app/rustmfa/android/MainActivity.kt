@@ -2,8 +2,8 @@ package app.rustmfa.android
 
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,11 +14,13 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.rustmfa.android.enroll.Enrollment
 import app.rustmfa.android.ui.AppNavigation
+import app.rustmfa.android.ui.ApproveScreen
+import app.rustmfa.android.ui.ApproveViewModel
 import app.rustmfa.android.ui.OnboardingScreen
 import app.rustmfa.android.ui.OnboardingViewModel
 import app.rustmfa.android.ui.RustMfaTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -39,6 +41,14 @@ class MainActivity : ComponentActivity() {
                             val vm: OnboardingViewModel =
                                 viewModel(factory = viewModelFactory { initializer { OnboardingViewModel(app.enrollmentRepository(), BuildConfig.DEBUG) } })
                             OnboardingScreen(vm, defaultName = Build.MODEL ?: "Phone", onDone = onDone)
+                        },
+                        approve = { id, onClose ->
+                            val e = enrollment
+                            if (e != null) {
+                                val vm: ApproveViewModel =
+                                    viewModel(key = id, factory = viewModelFactory { initializer { ApproveViewModel(app.challengeFlow(e), id) } })
+                                ApproveScreen(vm, onClose = onClose, onReconnect = { app.resetEnrollment(); recreate() })
+                            }
                         },
                     )
                 }

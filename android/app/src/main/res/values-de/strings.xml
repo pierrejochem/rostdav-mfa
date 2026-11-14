@@ -33,4 +33,24 @@
     <string name="err_rate_limited">Zu viele Versuche. Warte eine Minute und versuche es erneut.</string>
     <string name="err_token_rejected">Das Token ist falsch, benutzt oder abgelaufen. Erstelle auf der Server-Seite ein neues.</string>
     <string name="err_rejected">Der Server hat die Einrichtung abgelehnt.</string>
+    <string name="approve_from">Anmeldung bei %1$s</string>
+    <string name="approve_device">Gerät: %1$s</string>
+    <string name="approve_location">In der Nähe von: %1$s</string>
+    <string name="approve_left">%1$d s übrig</string>
+    <string name="approve_pick">Welche Zahl siehst du dort, wo du dich anmeldest?</string>
+    <string name="approve_deny">Ablehnen</string>
+    <string name="approve_working">Bitte warten…</string>
+    <string name="biometric_title">Anmeldung bestätigen</string>
+    <string name="biometric_cancel">Abbrechen</string>
+    <string name="result_approved">Genehmigt</string>
+    <string name="result_denied">Anfrage abgelehnt</string>
+    <string name="result_mismatch">Falsche Zahl. Die Anfrage wurde abgelehnt.</string>
+    <string name="result_expired">Abgelaufen</string>
+    <string name="result_handled">Bereits bearbeitet</string>
+    <string name="result_offline">Keine Verbindung. Ich versuche es erneut, bis die Anfrage abläuft…</string>
+    <string name="result_key_invalidated">Der Schlüssel dieses Telefons ist nicht mehr gültig, zum Beispiel nach einem neuen Fingerabdruck. Verbinde das Telefon neu.</string>
+    <string name="result_reconnect">Gerät neu verbinden</string>
+    <string name="result_revoked">Dieses Telefon wurde auf dem Server entfernt.</string>
+    <string name="result_failed">Die Anfrage konnte nicht geladen werden.</string>
+    <string name="result_done">Fertig</string>
 </resources>
