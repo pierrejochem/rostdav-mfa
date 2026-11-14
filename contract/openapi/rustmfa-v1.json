@@ -311,9 +311,11 @@
         "type": "object"
       },
       "PushChannel": {
+        "description": "`none` is a phone without a push service: it is woken by polling only, and its push token is empty.",
         "enum": [
           "fcm",
-          "unifiedpush"
+          "unifiedpush",
+          "none"
         ],
         "type": "string"
       },
@@ -323,6 +325,7 @@
             "$ref": "#/components/schemas/PushChannel"
           },
           "push_token": {
+            "description": "Push service token. Must be empty for the channel `none`, and a non-empty value without control characters for `fcm` and `unifiedpush`.",
             "type": "string"
           }
         },
@@ -359,6 +362,7 @@
             "$ref": "#/components/schemas/PushChannel"
           },
           "push_token": {
+            "description": "Push service token. Must be empty for the channel `none`, and a non-empty value without control characters for `fcm` and `unifiedpush`.",
             "type": "string"
           },
           "request_public_key": {

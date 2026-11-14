@@ -178,7 +178,7 @@ Rate limits apply per device and per user on challenge creation and on approve/d
 
 ### 4.8 Push
 
-The push payload is a data message with `challenge_id` only, sent at high priority. The app fetches details through the authenticated GET. The `PushChannel` trait and the Android interface both exist from day one. UnifiedPush follows in phase 7. Android 13+ needs the `POST_NOTIFICATIONS` runtime permission, and the app handles a denial by relying on polling. FCM routes a "request pending" signal through Google. It carries no secret.
+The push payload is a data message with `challenge_id` only, sent at high priority. The app fetches details through the authenticated GET. The `PushChannel` trait and the Android interface both exist from day one. UnifiedPush follows in phase 7. Android 13+ needs the `POST_NOTIFICATIONS` runtime permission, and the app handles a denial by relying on polling. FCM routes a "request pending" signal through Google. It carries no secret. A phone without any push service registers with the channel `none` and an empty push token; the server never sends to it, and the app relies on polling.
 
 ## 5. TOTP vault
 
