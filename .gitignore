@@ -2,3 +2,5 @@
 target/
 docs/*.pdf
 docs/*.png
+/.idea/
+/.openidea/
