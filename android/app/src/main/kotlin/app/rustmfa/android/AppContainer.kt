@@ -6,6 +6,9 @@ import app.rustmfa.android.enroll.DataStoreDeviceStore
 import app.rustmfa.android.enroll.EnrollmentRepository
 import app.rustmfa.android.enroll.PushInfo
 import app.rustmfa.android.domain.ChallengeFlow
+import app.rustmfa.android.domain.GuardedApi
+import app.rustmfa.android.domain.SessionGuard
+import app.rustmfa.android.net.MfaApi
 import app.rustmfa.android.domain.Delayer
 import app.rustmfa.android.enroll.Enrollment
 import app.rustmfa.android.net.ClockSkew
@@ -25,6 +28,10 @@ class AppContainer private constructor(private val context: Context) {
     val store = DataStoreDeviceStore(context)
     val key = KeyStoreDeviceKey(context)
     val skew = ClockSkew()
+    val guard = SessionGuard(store, key)
+
+    /** Set by the activity: the server revoked this phone, the guard has wiped it, the screen must restart. */
+    @Volatile var onSessionEnded: (() -> Unit)? = null
     val pushChannel: PushChannel by lazy { platformPushChannel(context) }
     private val sink by lazy { AndroidNotificationSink(context) }
     private var notifierFor: Pair<String, ChallengeNotifier>? = null
@@ -50,8 +57,11 @@ class AppContainer private constructor(private val context: Context) {
         )
 
     /** A signed client for the enrolled server, on the corrected clock. */
-    fun signedApi(e: Enrollment) =
-        OkHttpMfaApi(e.server.toHttpUrl(), RequestSigner(e.deviceId, key, skew), skew, allowHttp = BuildConfig.DEBUG)
+    fun signedApi(e: Enrollment): MfaApi =
+        GuardedApi(
+            OkHttpMfaApi(e.server.toHttpUrl(), RequestSigner(e.deviceId, key, skew), skew, allowHttp = BuildConfig.DEBUG),
+            guard,
+        ) { onSessionEnded?.invoke() }
 
     fun challengeFlow(e: Enrollment) = ChallengeFlow(signedApi(e), key, e.deviceId, skew, Delayer { delay(it) })
 

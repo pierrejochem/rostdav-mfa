@@ -57,4 +57,27 @@
     <string name="notif_title">Anmeldeanfrage</string>
     <string name="notif_text">%1$s · %2$s</string>
     <string name="home_notifications_off">Benachrichtigungen sind aus. Neue Anfragen erscheinen nur hier, solange die App offen ist.</string>
+    <string name="devices_this">Dieses Telefon</string>
+    <string name="devices_last_seen">Zuletzt gesehen %1$s</string>
+    <string name="devices_never_seen">Noch nicht gesehen</string>
+    <string name="devices_strongbox">StrongBox</string>
+    <string name="devices_revoked">Entfernt</string>
+    <string name="devices_revoke">Entfernen</string>
+    <string name="devices_revoke_title">Dieses Telefon entfernen?</string>
+    <string name="devices_revoke_this">Dieses Telefon bestätigt keine Anmeldungen mehr und muss neu verbunden werden.</string>
+    <string name="devices_revoke_other">%1$s bestätigt keine Anmeldungen mehr.</string>
+    <string name="devices_confirm">Entfernen</string>
+    <string name="devices_cancel">Abbrechen</string>
+    <string name="devices_audit">Letzte Ereignisse</string>
+    <string name="devices_audit_empty">Noch keine Ereignisse.</string>
+    <string name="audit_device_registered">Telefon verbunden</string>
+    <string name="audit_device_revoked">Telefon entfernt</string>
+    <string name="audit_key_rotated">Schlüssel ersetzt</string>
+    <string name="audit_challenge_created">Anfrage erstellt</string>
+    <string name="audit_challenge_approved">Anfrage bestätigt</string>
+    <string name="audit_challenge_denied">Anfrage abgelehnt</string>
+    <string name="audit_challenge_expired">Anfrage abgelaufen</string>
+    <string name="audit_number_mismatch">Falsche Zahl gewählt</string>
+    <string name="reconnect_title">Gerät neu verbinden</string>
+    <string name="reconnect_server">Server: %1$s</string>
 </resources>

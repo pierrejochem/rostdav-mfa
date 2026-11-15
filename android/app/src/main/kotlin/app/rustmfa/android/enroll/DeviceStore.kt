@@ -8,6 +8,8 @@ data class Enrollment(
     val deviceId: String,
     val pushChannel: PushChannel,
     val pushToken: String,
+    /** The approval key is gone (new fingerprint, lock removed). The server address stays; the user connects again. */
+    val needsReconnect: Boolean = false,
 )
 
 interface DeviceStore {

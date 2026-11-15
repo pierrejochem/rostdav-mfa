@@ -1,6 +1,7 @@
 package app.rustmfa.android.enroll
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -19,13 +20,14 @@ class DataStoreDeviceStore(context: Context) : DeviceStore {
             it[DEVICE_ID] = e.deviceId
             it[CHANNEL] = e.pushChannel.name
             it[TOKEN] = e.pushToken
+            it[RECONNECT] = e.needsReconnect
         }
     }
 
     override suspend fun load(): Enrollment? {
         val p = store.data.first()
         val channel = p[CHANNEL]?.let { n -> PushChannel.entries.firstOrNull { it.name == n } } ?: return null
-        return Enrollment(p[SERVER] ?: return null, p[DEVICE_ID] ?: return null, channel, p[TOKEN] ?: return null)
+        return Enrollment(p[SERVER] ?: return null, p[DEVICE_ID] ?: return null, channel, p[TOKEN] ?: return null, p[RECONNECT] ?: false)
     }
 
     override suspend fun clear() {
@@ -37,5 +39,6 @@ class DataStoreDeviceStore(context: Context) : DeviceStore {
         val DEVICE_ID = stringPreferencesKey("device_id")
         val CHANNEL = stringPreferencesKey("push_channel")
         val TOKEN = stringPreferencesKey("push_token")
+        val RECONNECT = booleanPreferencesKey("needs_reconnect")
     }
 }

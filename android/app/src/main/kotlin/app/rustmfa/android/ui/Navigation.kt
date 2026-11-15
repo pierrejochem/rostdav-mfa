@@ -25,6 +25,7 @@ object Dest {
     const val APPROVE = "approve/{id}"
     const val DEVICES = "devices"
     const val SETTINGS = "settings"
+    const val RECONNECT = "reconnect"
 
     fun approve(id: String) = "approve/$id"
 }
@@ -42,6 +43,9 @@ private val Tabs =
 @Composable
 fun AppNavigation(
     enrolled: Boolean,
+    needsReconnect: Boolean = false,
+    reconnect: @Composable () -> Unit = {},
+    devices: @Composable () -> Unit = {},
     server: String,
     version: String,
     home: @Composable (onOpen: (String) -> Unit) -> Unit,
@@ -53,7 +57,7 @@ fun AppNavigation(
     val route = entry?.destination?.route
     Scaffold(
         bottomBar = {
-            if (route != null && route != Dest.ONBOARDING) {
+            if (route != null && route != Dest.ONBOARDING && route != Dest.RECONNECT) {
                 NavigationBar {
                     for (t in Tabs) {
                         NavigationBarItem(
@@ -73,17 +77,18 @@ fun AppNavigation(
             }
         },
     ) { padding ->
-        NavHost(nav, startDestination = if (enrolled) Dest.HOME else Dest.ONBOARDING, modifier = Modifier.padding(padding)) {
+        NavHost(nav, startDestination = if (needsReconnect) Dest.RECONNECT else if (enrolled) Dest.HOME else Dest.ONBOARDING, modifier = Modifier.padding(padding)) {
             composable(Dest.ONBOARDING) {
                 onboarding {
                     nav.navigate(Dest.HOME) { popUpTo(Dest.ONBOARDING) { inclusive = true } }
                 }
             }
+            composable(Dest.RECONNECT) { reconnect() }
             composable(Dest.HOME) { home { id -> nav.navigate(Dest.approve(id)) } }
             composable(Dest.APPROVE, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
                 approve(e.arguments?.getString("id").orEmpty()) { nav.popBackStack() }
             }
-            composable(Dest.DEVICES) { Text(stringResource(R.string.devices_title)) } // Task 8
+            composable(Dest.DEVICES) { devices() }
             composable(Dest.SETTINGS) { SettingsScreen(server, version) }
         }
     }

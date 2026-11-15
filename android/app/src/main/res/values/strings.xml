@@ -57,4 +57,27 @@
     <string name="notif_title">Sign-in request</string>
     <string name="notif_text">%1$s · %2$s</string>
     <string name="home_notifications_off">Notifications are off. New requests only show here while the app is open.</string>
+    <string name="devices_this">This phone</string>
+    <string name="devices_last_seen">Last seen %1$s</string>
+    <string name="devices_never_seen">Not seen yet</string>
+    <string name="devices_strongbox">StrongBox</string>
+    <string name="devices_revoked">Removed</string>
+    <string name="devices_revoke">Remove</string>
+    <string name="devices_revoke_title">Remove this phone?</string>
+    <string name="devices_revoke_this">This phone will no longer approve sign-ins and must be connected again.</string>
+    <string name="devices_revoke_other">%1$s will no longer approve sign-ins.</string>
+    <string name="devices_confirm">Remove</string>
+    <string name="devices_cancel">Cancel</string>
+    <string name="devices_audit">Recent events</string>
+    <string name="devices_audit_empty">No events yet.</string>
+    <string name="audit_device_registered">Phone connected</string>
+    <string name="audit_device_revoked">Phone removed</string>
+    <string name="audit_key_rotated">Key replaced</string>
+    <string name="audit_challenge_created">Request created</string>
+    <string name="audit_challenge_approved">Request approved</string>
+    <string name="audit_challenge_denied">Request denied</string>
+    <string name="audit_challenge_expired">Request expired</string>
+    <string name="audit_number_mismatch">Wrong number picked</string>
+    <string name="reconnect_title">Connect again</string>
+    <string name="reconnect_server">Server: %1$s</string>
 </resources>

@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -15,6 +16,9 @@ import app.rustmfa.android.push.AndroidNotificationSink
 import app.rustmfa.android.push.PendingPoller
 import app.rustmfa.android.push.PushPayload
 import app.rustmfa.android.ui.Dest
+import app.rustmfa.android.ui.DevicesScreen
+import app.rustmfa.android.ui.DevicesViewModel
+import app.rustmfa.android.ui.ReconnectScreen
 import app.rustmfa.android.ui.HomeScreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -106,6 +110,12 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         takeIntent(intent)
         val app = AppContainer.get(applicationContext)
+        app.onSessionEnded = {
+            runOnUiThread {
+                Toast.makeText(this, R.string.result_revoked, Toast.LENGTH_LONG).show()
+                recreate()
+            }
+        }
         setContent {
             RustMfaTheme {
                 // null while the store is read; the start destination is chosen once
@@ -115,7 +125,7 @@ class MainActivity : FragmentActivity() {
                 }
                 loaded?.let { (enrolled, enrollment) ->
                     val nav = rememberNavController()
-                    LaunchedEffect(enrollment) { if (enrollment != null) startSession(app, enrollment) }
+                    LaunchedEffect(enrollment) { if (enrollment != null && !enrollment.needsReconnect) startSession(app, enrollment) }
                     val wanted = openChallenge.value
                     LaunchedEffect(wanted, enrolled) {
                         if (wanted != null && enrolled) {
@@ -125,6 +135,18 @@ class MainActivity : FragmentActivity() {
                     }
                     AppNavigation(
                         nav = nav,
+                        needsReconnect = enrollment?.needsReconnect == true,
+                        reconnect = {
+                            ReconnectScreen(enrollment?.server ?: "") { app.resetEnrollment(); recreate() }
+                        },
+                        devices = {
+                            val e = enrollment
+                            if (e != null) {
+                                val vm: DevicesViewModel =
+                                    viewModel(factory = viewModelFactory { initializer { DevicesViewModel(app.signedApi(e), e.deviceId, app.guard) } })
+                                DevicesScreen(vm, onThisPhoneRevoked = { recreate() })
+                            }
+                        },
                         home = { onOpen ->
                             HomeScreen(enrollment?.server ?: "", pendingList.value, notificationsOff.value, onOpen)
                         },
@@ -146,7 +168,12 @@ class MainActivity : FragmentActivity() {
                             if (e != null) {
                                 val vm: ApproveViewModel =
                                     viewModel(key = id, factory = viewModelFactory { initializer { ApproveViewModel(app.challengeFlow(e), id) } })
-                                ApproveScreen(vm, onClose = onClose, onReconnect = { app.resetEnrollment(); recreate() })
+                                ApproveScreen(vm, onClose = onClose, onReconnect = { invalidated ->
+                                    lifecycleScope.launch {
+                                        if (invalidated) app.guard.onKeyInvalidated() else app.resetEnrollment()
+                                        recreate()
+                                    }
+                                })
                             }
                         },
                     )

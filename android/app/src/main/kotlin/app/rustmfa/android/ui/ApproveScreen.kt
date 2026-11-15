@@ -27,7 +27,8 @@ import app.rustmfa.android.domain.ChallengeState
 
 /** The screen with the window flag that blocks screenshots and the recents preview. */
 @Composable
-fun ApproveScreen(vm: ApproveViewModel, onClose: () -> Unit, onReconnect: () -> Unit) {
+/** [onReconnect] gets `true` when the approval key is invalidated (the server address is kept) and `false` otherwise. */
+fun ApproveScreen(vm: ApproveViewModel, onClose: () -> Unit, onReconnect: (keyInvalidated: Boolean) -> Unit) {
     val activity = LocalActivity.current
     DisposableEffect(activity) {
         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -40,7 +41,7 @@ fun ApproveScreen(vm: ApproveViewModel, onClose: () -> Unit, onReconnect: () -> 
         onPick = { vm.approve(it, auth) },
         onDeny = { vm.deny(auth) },
         onClose = onClose,
-        onReconnect = onReconnect,
+        onReconnect = { onReconnect(state == ChallengeState.KeyInvalidated) },
     )
 }
 
