@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">RustMFA</string>
+    <string name="app_name">rostdav-mfa</string>
     <string name="nav_home">Übersicht</string>
     <string name="nav_devices">Geräte</string>
     <string name="nav_settings">Einstellungen</string>
@@ -26,7 +26,7 @@
     <string name="settings_title">Einstellungen</string>
     <string name="settings_version">Version %1$s</string>
     <string name="approve_title">Anmeldeanfrage</string>
-    <string name="err_bad_link">Dieser Code ist kein gültiger RustMFA-Einrichtungscode.</string>
+    <string name="err_bad_link">Dieser Code ist kein gültiger rostdav-mfa-Einrichtungscode.</string>
     <string name="err_no_secure_lock">Richte in den Telefon-Einstellungen eine Bildschirmsperre und einen Fingerabdruck oder ein Gesicht ein und versuche es dann erneut.</string>
     <string name="err_network">Der Server ist nicht erreichbar. Prüfe die Adresse und deine Verbindung.</string>
     <string name="err_storage">Das Telefon konnte die Einrichtung nicht speichern. Entferne es auf der Server-Seite und versuche es erneut.</string>

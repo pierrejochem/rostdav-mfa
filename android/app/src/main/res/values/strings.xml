@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">RustMFA</string>
+    <string name="app_name">rostdav-mfa</string>
     <string name="nav_home">Overview</string>
     <string name="nav_devices">Devices</string>
     <string name="nav_settings">Settings</string>
@@ -26,7 +26,7 @@
     <string name="settings_title">Settings</string>
     <string name="settings_version">Version %1$s</string>
     <string name="approve_title">Sign-in request</string>
-    <string name="err_bad_link">This code is not a valid RustMFA enrollment code.</string>
+    <string name="err_bad_link">This code is not a valid rostdav-mfa enrollment code.</string>
     <string name="err_no_secure_lock">Set a screen lock and add a fingerprint or face in the phone settings, then try again.</string>
     <string name="err_network">The server could not be reached. Check the address and your connection.</string>
     <string name="err_storage">The phone could not save the enrollment. Remove it on the server page and try again.</string>
