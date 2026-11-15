@@ -61,8 +61,13 @@ class OnboardingScreenTest {
         val deny = device.wait(Until.findObject(By.res("com.android.permissioncontroller:id/permission_deny_button")), 10_000)
         assertNotNull(deny, "the system camera permission dialog did not appear")
         deny.click()
-        rule.waitUntil(5_000) {
-            rule.onAllNodesWithTextCount("Camera access was denied. You can still enter the address and token by hand.") == 1
+        rule.waitUntil(10_000) {
+            // the activity is recreated around the system dialog: no compose hierarchy for a moment
+            try {
+                rule.onAllNodesWithTextCount("Camera access was denied. You can still enter the address and token by hand.") == 1
+            } catch (_: IllegalStateException) {
+                false
+            }
         }
         rule.onNodeWithText("Enter by hand").assertExists()
     }
