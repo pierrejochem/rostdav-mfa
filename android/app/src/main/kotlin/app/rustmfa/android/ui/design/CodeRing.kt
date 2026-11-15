@@ -24,7 +24,10 @@ import app.rustmfa.android.ui.RustMfaTheme
 
 enum class RingState { Normal, Urgent }
 
-fun ringColor(secondsLeft: Int, total: Int): RingState = if (secondsLeft <= 5) RingState.Urgent else RingState.Normal
+/** The last five seconds of a countdown are urgent. */
+fun isUrgent(secondsLeft: Long): Boolean = secondsLeft <= 5
+
+fun ringColor(secondsLeft: Int, total: Int): RingState = if (isUrgent(secondsLeft.toLong())) RingState.Urgent else RingState.Normal
 
 fun ringProgress(secondsLeft: Int, total: Int): Float = if (total <= 0) 0f else (secondsLeft.toFloat() / total).coerceIn(0f, 1f)
 

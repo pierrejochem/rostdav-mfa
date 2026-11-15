@@ -2,12 +2,17 @@ package app.rustmfa.android.ui
 
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.performClick
 import androidx.test.platform.app.InstrumentationRegistry
 import app.rustmfa.android.crypto.KeyStoreDeviceKey
@@ -53,6 +58,31 @@ class ApproveScreenTest {
         rule.onNodeWithText("Deny").performClick()
         assertEquals(listOf(47), picked)
         assertEquals(1, denied)
+    }
+
+    @Test
+    fun numberChoicesAreNamedByTheirNumber() {
+        rule.setContent { RustMfaTheme { ApproveContent(ChallengeState.Pending(details, 27), {}, {}, {}, {}) } }
+        for (n in listOf(12, 47, 83)) rule.onNodeWithContentDescription("Number $n").assertIsDisplayed()
+    }
+
+    @Test
+    fun everythingStaysReachableAtTwiceTheFontSize() {
+        val base = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(base, fontScale = 2f)) {
+                RustMfaTheme { ApproveContent(ChallengeState.Pending(details, 27), {}, {}, {}, {}) }
+            }
+        }
+        for (n in listOf(12, 47, 83)) rule.onNodeWithContentDescription("Number $n").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Deny").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun aVeryLongServiceNameKeepsDenyReachable() {
+        val long = details.copy(serviceName = "S".repeat(300), loginDevice = "D".repeat(300))
+        rule.setContent { RustMfaTheme { ApproveContent(ChallengeState.Pending(long, 27), {}, {}, {}, {}) } }
+        rule.onNodeWithText("Deny").performScrollTo().assertIsDisplayed()
     }
 
     @Test
