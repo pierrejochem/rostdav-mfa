@@ -60,11 +60,15 @@ object OtpAuthUri {
         }
 
         var issuer = ""
-        var name: String
-        val colon = labelText.indexOf(':')
-        if (colon >= 0) {
-            issuer = percentDecode(labelText.substring(0, colon))
-            name = percentDecode(labelText.substring(colon + 1))
+        val name: String
+        val literal = labelText.indexOf(':')
+        val encoded = if (literal >= 0) -1 else labelText.indexOf("%3A", ignoreCase = true)
+        if (literal >= 0) {
+            issuer = percentDecode(labelText.substring(0, literal))
+            name = percentDecode(labelText.substring(literal + 1))
+        } else if (encoded >= 0) {
+            issuer = percentDecode(labelText.substring(0, encoded))
+            name = percentDecode(labelText.substring(encoded + 3))
         } else {
             name = percentDecode(labelText)
         }
@@ -77,6 +81,7 @@ object OtpAuthUri {
         val sb = StringBuilder(SCHEME)
         sb.append(if (account.type == OtpType.TOTP) "totp" else "hotp").append('/')
         if (account.issuer.isNotEmpty()) sb.append(percentEncode(account.issuer)).append(':')
+        else if (account.label.contains(':')) sb.append(':')
         sb.append(percentEncode(account.label))
         sb.append("?secret=").append(Base32.encode(account.secret).trimEnd('='))
         if (account.issuer.isNotEmpty()) sb.append("&issuer=").append(percentEncode(account.issuer))
@@ -99,8 +104,9 @@ object OtpAuthUri {
                 out.write(hex(text[i + 1]) * 16 + hex(text[i + 2]))
                 i += 3
             } else {
-                out.write(c.toString().toByteArray(Charsets.UTF_8))
-                i++
+                val cp = text.codePointAt(i)
+                out.write(String(Character.toChars(cp)).toByteArray(Charsets.UTF_8))
+                i += Character.charCount(cp)
             }
         }
         return out.toString(Charsets.UTF_8)

@@ -154,4 +154,37 @@ class OtpAuthUriTest {
         val a = OtpAccount("id", OtpType.TOTP, "", "a b@c", byteArrayOf(1, 2, 3, 4, 5))
         assertTrue(OtpAuthUri.build(a).contains("a%20b%40c"))
     }
+
+    @Test fun encodedColonSeparatesIssuer() {
+        val a = parse("otpauth://totp/Example%3Aalice?secret=$s")
+        assertEquals("Example", a.issuer)
+        assertEquals("alice", a.label)
+        val b = parse("otpauth://totp/Example%3a%20alice?secret=$s")
+        assertEquals("Example", b.issuer)
+        assertEquals(" alice", b.label)
+    }
+
+    @Test fun literalColonStillSeparatesIssuer() {
+        val a = parse("otpauth://totp/Example:alice?secret=$s")
+        assertEquals("Example", a.issuer)
+        assertEquals("alice", a.label)
+    }
+
+    @Test fun literalColonWinsOverEncodedColon() {
+        val a = parse("otpauth://totp/Ex:al%3Aice?secret=$s")
+        assertEquals("Ex", a.issuer)
+        assertEquals("al:ice", a.label)
+    }
+
+    @Test fun emojiSurvivesRoundTrip() {
+        val a = OtpAccount("id", OtpType.TOTP, "Acme \uD83D\uDD12", "bob \uD83D\uDD11", byteArrayOf(1, 2, 3, 4, 5))
+        val raw = parse("otpauth://totp/Acme \uD83D\uDD12:bob \uD83D\uDD11?secret=AEBAGBAF&issuer=Acme \uD83D\uDD12")
+        assertEquals(a, raw)
+        assertEquals(a, parse(OtpAuthUri.build(a)))
+    }
+
+    @Test fun percentEncodedEmojiDecodes() {
+        val a = parse("otpauth://totp/%F0%9F%94%92:x?secret=$s")
+        assertEquals("\uD83D\uDD12", a.issuer)
+    }
 }
