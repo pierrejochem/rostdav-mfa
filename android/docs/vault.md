@@ -27,7 +27,7 @@ Seeds are encrypted under a random 32-byte data key. The blob is stored in the D
 
     "RMFAV1" (6 ASCII bytes) | nonce (12 bytes) | AES-256-GCM ciphertext | tag (16 bytes)
 
-The associated data is the six magic bytes. The plaintext is the account JSON. A new random nonce is used on every save. A blob shorter than 6 + 12 + 16 bytes, with another magic, with a failing tag or with invalid JSON raises `VaultCorruptException`.
+The associated data is the six magic bytes. The plaintext is the account JSON. A new random nonce is used on every save. A blob shorter than 6 + 12 + 16 bytes, with another magic, with a failing tag or with invalid JSON raises `VaultCorruptException`. A damaged DataStore file raises it too: the store's corruption handler replaces the file by preferences that hold only a marker key (not empty preferences, which would read as "nothing stored" and let a first run overwrite the vault silently), and `DataStoreBlobStore.read()` throws `VaultCorruptException` while the marker is there or when the stored value is not base64. `clear()` and `write()` remove the marker, so `reset()` works. A damaged `vault_key` file means the wrapped key cannot be read back: `KeystoreKeyWrapper.hasKey()` is false and `unwrap()` throws `VaultKeyLostException`.
 
 The data key is wrapped by the Keystore key (alias `rostdav_mfa_vault_key`) and stored in the DataStore file `vault_key` as:
 

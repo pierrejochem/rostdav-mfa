@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.rustmfa.vault.VaultAuthRequiredException
@@ -137,6 +138,24 @@ class KeystoreKeyWrapperTest {
         assertFalse(keyStore().containsAlias(ALIAS))
         assertNull(blob.read())
         assertFalse(wrapper.hasKey())
+    }
+
+    @Test
+    fun aDamagedWrappedKeyFileIsKeyLost() = runBlocking {
+        val name = "test_vault_key_damaged_${System.nanoTime()}"
+        val file = context.preferencesDataStoreFile(name)
+        file.parentFile!!.mkdirs()
+        file.writeBytes(byteArrayOf(0x7F, 0x13, 0x00, 0x55, 0xAA.toByte(), 0x01))
+        try {
+            val damaged = KeystoreKeyWrapper(context, DataStoreBlobStore(context, name), ALIAS)
+            wrapper.generateKey()
+            assertFalse(damaged.hasKey())
+            assertFailsWith<VaultKeyLostException> { damaged.unwrap() }
+            damaged.destroy() // the reset path still works
+            assertFalse(keyStore().containsAlias(ALIAS))
+        } finally {
+            file.delete()
+        }
     }
 
     private companion object {

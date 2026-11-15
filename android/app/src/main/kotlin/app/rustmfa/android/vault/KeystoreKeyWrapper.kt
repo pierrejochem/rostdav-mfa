@@ -10,6 +10,7 @@ import android.security.keystore.UserNotAuthenticatedException
 import app.rustmfa.vault.BlobStore
 import app.rustmfa.vault.KeyWrapper
 import app.rustmfa.vault.VaultAuthRequiredException
+import app.rustmfa.vault.VaultCorruptException
 import app.rustmfa.vault.VaultKeyLostException
 import java.security.GeneralSecurityException
 import java.security.KeyStore
@@ -75,7 +76,7 @@ class KeystoreKeyWrapper(
 
     override suspend fun hasKey(): Boolean = withContext(Dispatchers.IO) {
         if (!keyStore().containsAlias(alias)) return@withContext false
-        val stored = wrapped.read() ?: return@withContext false
+        val stored = readWrapped() ?: return@withContext false
         stored.fill(0)
         true
     }
@@ -105,7 +106,7 @@ class KeystoreKeyWrapper(
     }
 
     override suspend fun unwrap(): ByteArray = withContext(Dispatchers.IO) {
-        val stored = wrapped.read() ?: throw VaultKeyLostException()
+        val stored = readWrapped() ?: throw VaultKeyLostException()
         try {
             if (stored.size <= IV_BYTES + TAG_BYTES) throw VaultKeyLostException()
             try {
@@ -123,6 +124,14 @@ class KeystoreKeyWrapper(
             stored.fill(0)
         }
     }
+
+    /** The stored wrapped key; a damaged store cannot give it back, so the data key is lost. */
+    private suspend fun readWrapped(): ByteArray? =
+        try {
+            wrapped.read()
+        } catch (e: VaultCorruptException) {
+            null
+        }
 
     override suspend fun destroy(): Unit = withContext(Dispatchers.IO) {
         deleteKey()
