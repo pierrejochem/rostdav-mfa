@@ -18,6 +18,7 @@ camera = "1.6.2"
 zxing = "3.5.4"
 uiautomator = "2.3.0"
 splashscreen = "1.2.0"
+bouncycastle = "1.87"
 
 [libraries]
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
@@ -30,6 +31,7 @@ androidx-compose-ui = { module = "androidx.compose.ui:ui" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serializationJson" }
 junit = { module = "junit:junit", version.ref = "junit" }
+bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "testRunner" }
 androidx-test-rules = { module = "androidx.test:rules", version.ref = "testRunner" }

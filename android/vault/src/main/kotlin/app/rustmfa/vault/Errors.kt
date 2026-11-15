@@ -14,3 +14,9 @@ class OtpAuthException(val reason: Reason) : Exception("invalid otpauth URI: $re
         BadAlgorithm,
     }
 }
+
+/** Not a rostdav-mfa backup, unknown version or algorithm, hostile parameters, or a passphrase too short on export. */
+class BackupFormatException(message: String) : Exception(message)
+
+/** Wrong passphrase or damaged file; the two cannot be told apart. */
+class BackupDecryptException : Exception("wrong passphrase or damaged file")
