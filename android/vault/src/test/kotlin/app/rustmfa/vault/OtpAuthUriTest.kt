@@ -75,9 +75,46 @@ class OtpAuthUriTest {
         assertEquals("alice", a.label)
     }
 
-    @Test fun plusInQueryIsLiteral() {
-        val a = parse("otpauth://totp/x?secret=$s&issuer=A+B")
-        assertEquals("A+B", a.issuer)
+    @Test fun plusInQueryIsASpace() {
+        assertEquals("Acme Inc", parse("otpauth://totp/x?secret=$s&issuer=Acme+Inc").issuer)
+        assertEquals("A B", parse("otpauth://totp/x?secret=$s&issuer=A+B").issuer)
+    }
+
+    @Test fun encodedPlusInQueryIsAPlus() {
+        assertEquals("Acme+Inc", parse("otpauth://totp/x?secret=$s&issuer=Acme%2BInc").issuer)
+    }
+
+    @Test fun plusInPathStaysAPlus() {
+        val a = parse("otpauth://totp/Acme+Inc:bob+x@y.org?secret=$s")
+        assertEquals("Acme+Inc", a.issuer)
+        assertEquals("bob+x@y.org", a.label)
+    }
+
+    @Test fun spaceAfterTheIssuerColonIsDropped() {
+        assertEquals("alice", parse("otpauth://totp/Issuer:%20alice?secret=$s").label)
+        assertEquals("alice", parse("otpauth://totp/Issuer: alice?secret=$s").label)
+        assertEquals("alice", parse("otpauth://totp/Issuer:%20%20alice?secret=$s").label)
+        assertEquals("Issuer", parse("otpauth://totp/Issuer: alice?secret=$s").issuer)
+    }
+
+    @Test fun buildEncodesSpaceAndPlusSoTheyRoundTrip() {
+        val a = OtpAccount("id", OtpType.TOTP, "A+B C", "x+y z", byteArrayOf(1, 2, 3, 4, 5))
+        val u = OtpAuthUri.build(a)
+        assertFalse(u.contains('+'))
+        assertFalse(u.contains(' '))
+        assertTrue(u.contains("A%2BB%20C"))
+        assertEquals(a, parse(u))
+    }
+
+    @Test fun labelWithLeadingSpaceRoundTripsWithoutIssuer() {
+        val a = OtpAccount("id", OtpType.TOTP, "", " bob", byteArrayOf(1, 2, 3, 4, 5))
+        assertEquals(a, parse(OtpAuthUri.build(a)))
+    }
+
+    @Test fun labelWithLeadingSpaceLosesItBehindAnIssuer() {
+        // Documented one-way loss: after the issuer colon, leading spaces are the separator's optional spaces.
+        val a = OtpAccount("id", OtpType.TOTP, "Acme", " bob", byteArrayOf(1, 2, 3, 4, 5))
+        assertEquals(a.copy(label = "bob"), parse(OtpAuthUri.build(a)))
     }
 
     @Test fun lenientSecretText() {
@@ -161,7 +198,7 @@ class OtpAuthUriTest {
         assertEquals("alice", a.label)
         val b = parse("otpauth://totp/Example%3a%20alice?secret=$s")
         assertEquals("Example", b.issuer)
-        assertEquals(" alice", b.label)
+        assertEquals("alice", b.label)
     }
 
     @Test fun literalColonStillSeparatesIssuer() {

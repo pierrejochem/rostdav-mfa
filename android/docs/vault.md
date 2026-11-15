@@ -8,6 +8,7 @@ The vault keeps the user's own TOTP and HOTP accounts (the seeds of other servic
 
 - `OtpAccount`, `OtpType`, `OtpAlgorithm`: the account model. The secret is a byte array, `toString` redacts it. Checks: secret not empty, digits 6 or 8, period 1 to 3600, counter not negative.
 - `Base32`, `Otp` (RFC 6238 and RFC 4226), `OtpAuthUri` (parse and build `otpauth://` URIs, errors as `OtpAuthException`).
+- `OtpAuthUri` decoding: in query values a `+` is a space (as Android's `Uri.getQueryParameter` and PHP `urlencode` treat it; a real plus is `%2B`); in the path only percent escapes are decoded, so a `+` stays a plus. Spaces after the issuer colon are dropped from the account name. `build` writes a space as `%20` and a plus as `%2B`. One loss: an account name that starts with a space, behind an issuer (or containing a colon), comes back from `build` then `parse` without those spaces.
 - `VaultKdf` (Argon2id, version 0x13), `VaultCipher` (AES-256-GCM, 128-bit tag, key 32 bytes, nonce 12 bytes).
 - `VaultAccountsJson`: the account list as UTF-8 JSON `{"v":1,"accounts":[...]}` with base32 secrets. It is the plaintext of both the vault blob and the backup.
 - `VaultBackup`: export and import of the passphrase-encrypted backup file.

@@ -30,7 +30,8 @@ object OtpAuthUri {
             if (pair.isEmpty()) continue
             val eq = pair.indexOf('=')
             val key = percentDecode(if (eq >= 0) pair.substring(0, eq) else pair)
-            val value = percentDecode(if (eq >= 0) pair.substring(eq + 1) else "")
+            // form encoding in values, as Android's Uri.getQueryParameter and PHP urlencode use: '+' is a space
+            val value = percentDecode(if (eq >= 0) pair.substring(eq + 1) else "", plusIsSpace = true)
             params.putIfAbsent(key, value)
         }
 
@@ -59,16 +60,18 @@ object OtpAuthUri {
             0L
         }
 
+        // The Key URI format allows spaces after the issuer colon; they are not part of the account name. So a
+        // name that starts with a space cannot round-trip behind an issuer (build then parse drops the spaces).
         var issuer = ""
         val name: String
         val literal = labelText.indexOf(':')
         val encoded = if (literal >= 0) -1 else labelText.indexOf("%3A", ignoreCase = true)
         if (literal >= 0) {
             issuer = percentDecode(labelText.substring(0, literal))
-            name = percentDecode(labelText.substring(literal + 1))
+            name = percentDecode(labelText.substring(literal + 1)).trimStart()
         } else if (encoded >= 0) {
             issuer = percentDecode(labelText.substring(0, encoded))
-            name = percentDecode(labelText.substring(encoded + 3))
+            name = percentDecode(labelText.substring(encoded + 3)).trimStart()
         } else {
             name = percentDecode(labelText)
         }
@@ -95,7 +98,8 @@ object OtpAuthUri {
         return sb.toString()
     }
 
-    private fun percentDecode(text: String): String {
+    /** Percent-decodes [text] as UTF-8; with [plusIsSpace] (query values only) a '+' is a space, a real plus is %2B. */
+    private fun percentDecode(text: String, plusIsSpace: Boolean = false): String {
         val out = ByteArrayOutputStream()
         var i = 0
         while (i < text.length) {
@@ -103,6 +107,9 @@ object OtpAuthUri {
             if (c == '%' && i + 2 < text.length && hex(text[i + 1]) >= 0 && hex(text[i + 2]) >= 0) {
                 out.write(hex(text[i + 1]) * 16 + hex(text[i + 2]))
                 i += 3
+            } else if (c == '+' && plusIsSpace) {
+                out.write(' '.code)
+                i++
             } else {
                 val cp = text.codePointAt(i)
                 out.write(String(Character.toChars(cp)).toByteArray(Charsets.UTF_8))
