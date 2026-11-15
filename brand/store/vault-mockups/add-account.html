@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>rostdav-mfa mock-up, planned vault</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+body{margin:0}
+*{box-sizing:border-box}
+.scr{width:390px;height:844px;position:relative;overflow:hidden;color:#F4EFE8;font-family:'Space Grotesk',system-ui,sans-serif;background:radial-gradient(70% 36% at 8% 6%,rgba(194,73,29,.5),transparent 70%),radial-gradient(60% 40% at 100% 98%,rgba(122,42,18,.6),transparent 70%),#0B0C10}
+.glass{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);border-radius:16px;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%)}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#A39B92}
+.opt{display:flex;align-items:center;gap:14px;padding:16px;min-height:76px;color:inherit;text-decoration:none}
+.ico{width:44px;height:44px;border-radius:12px;background:rgba(232,120,58,.18);display:flex;align-items:center;justify-content:center;flex:none}
+.ico svg{width:24px;height:24px;fill:#F7C589}
+.div{height:1px;background:rgba(255,255,255,.10);margin:0 16px}
+.t{font-size:15px;font-weight:600}.s{font-size:14px;color:#C2BAB1}
+
+body{zoom:2}</style></head><body>
+<div class="scr">
+<div style="padding: 48px 24px 0; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; gap: 8px">
+<a href="Accounts.dc.html" aria-label="Back" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-left: -12px"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#F4EFE8" d="M20,11H7.83l5.59,-5.59L12,4l-8,8 8,8 1.41,-1.41L7.83,13H20v-2z"/></svg></a>
+<div>
+<div class="eyebrow">Authenticator vault</div>
+<h1 style="margin: 4px 0 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15">Add account</h1>
+</div>
+</div>
+<div style="font-size: 16px; color: #C2BAB1">Choose how to add a new account. The secret never leaves this phone.</div>
+<div style="align-self: flex-start; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; color: #F7C589; background: rgba(232,120,58,.18); border-radius: 13px; padding: 5px 10px">MOCK-UP · PLANNED</div>
+<div class="glass">
+<a href="AddAccount.dc.html" class="opt"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3,11h8V3H3v8zM5,5h4v4H5V5zM3,21h8v-8H3v8zM5,15h4v4H5v-4zM13,3v8h8V3h-8zM19,9h-4V5h4v4zM19,19h2v2h-2zM13,13h2v2h-2zM15,15h2v2h-2zM13,17h2v2h-2zM15,19h2v2h-2zM17,17h2v2h-2zM17,13h2v2h-2zM19,15h2v2h-2z"/></svg></div><div style="flex: 1 1 0"><div class="t">Scan QR code</div><div class="s">Point the camera at the code on the website</div></div><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#A39B92" d="M8.59,16.59L13.17,12 8.59,7.41 10,6l6,6 -6,6z"/></svg></a>
+<div class="div"></div>
+<a href="AddAccount.dc.html" class="opt"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3,17.25V21h3.75L17.81,9.94l-3.75,-3.75L3,17.25zM20.71,7.04c0.39,-0.39 0.39,-1.02 0,-1.41l-2.34,-2.34c-0.39,-0.39 -1.02,-0.39 -1.41,0l-1.83,1.83 3.75,3.75 1.83,-1.83z"/></svg></div><div style="flex: 1 1 0"><div class="t">Enter by hand</div><div class="s">Type the setup key and pick the algorithm</div></div><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#A39B92" d="M8.59,16.59L13.17,12 8.59,7.41 10,6l6,6 -6,6z"/></svg></a>
+<div class="div"></div>
+<a href="AddAccount.dc.html" class="opt"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19,9h-4V3H9v6H5l7,7 7,-7zM5,18v2h14v-2H5z"/></svg></div><div style="flex: 1 1 0"><div class="t">Import a backup</div><div class="s">From an encrypted rostdav-mfa file</div></div><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#A39B92" d="M8.59,16.59L13.17,12 8.59,7.41 10,6l6,6 -6,6z"/></svg></a>
+<div class="div"></div>
+<a href="AddAccount.dc.html" class="opt"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM13,17h-2v-6h2v6zM13,9h-2L11,7h2v2z"/></svg></div><div style="flex: 1 1 0"><div class="t">Help</div><div class="s">Where to find the setup key on a website</div></div><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#A39B92" d="M8.59,16.59L13.17,12 8.59,7.41 10,6l6,6 -6,6z"/></svg></a>
+</div>
+</div>
+</div>
+</body></html>

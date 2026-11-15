@@ -26,14 +26,17 @@ class GenerateTest(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp())
         self.kt = self.tmp / "Tokens.kt"
         self.css = self.tmp / "tokens.css"
-        self.args = ["--tokens", str(FIXTURE), "--kotlin-out", str(self.kt), "--css-out", str(self.css)]
+        self.guide = self.tmp / "GUIDE.md"
+        self.guide_text = "# Guide\n\nbefore\n\n<!-- tokens:start -->\nold\n<!-- tokens:end -->\n\nafter\n"
+        self.guide.write_text(self.guide_text)
+        self.args = ["--tokens", str(FIXTURE), "--kotlin-out", str(self.kt), "--css-out", str(self.css), "--guide-out", str(self.guide)]
 
     def bad_tokens(self, mutate):
         data = json.loads(FIXTURE.read_text())
         mutate(data)
         path = self.tmp / "bad.json"
         path.write_text(json.dumps(data))
-        return ["--tokens", str(path), "--kotlin-out", str(self.kt), "--css-out", str(self.css)]
+        return ["--tokens", str(path), "--kotlin-out", str(self.kt), "--css-out", str(self.css), "--guide-out", str(self.guide)]
 
     def test_kotlin_output_has_the_exact_color_line(self):
         self.assertEqual(run(self.args)[0], 0)
@@ -56,6 +59,7 @@ class GenerateTest(unittest.TestCase):
         self.assertIn("ink", err)
         self.assertFalse(self.kt.exists())
         self.assertFalse(self.css.exists())
+        self.assertEqual(self.guide.read_text(), self.guide_text)
 
     def test_malformed_hex_fails_naming_the_key_and_writes_nothing(self):
         def mutate(d):
@@ -78,6 +82,30 @@ class GenerateTest(unittest.TestCase):
         code, err = run(self.args + ["--check"])
         self.assertEqual(code, 1)
         self.assertIn("Tokens.kt", err)
+
+    def test_guide_table_replaces_only_the_marked_text(self):
+        self.assertEqual(run(self.args)[0], 0)
+        text = self.guide.read_text()
+        self.assertTrue(text.startswith("# Guide\n\nbefore\n\n<!-- tokens:start -->\n"))
+        self.assertTrue(text.endswith("<!-- tokens:end -->\n\nafter\n"))
+        self.assertNotIn("\nold\n", text)
+        self.assertIn("| `rost500` | `#E26A2E` | `#FF9A66` |", text)
+        self.assertIn("| `chip` | 12 |", text)
+
+    def test_a_guide_without_markers_fails_and_is_left_alone(self):
+        self.guide.write_text("# no markers\n")
+        code, err = run(self.args)
+        self.assertEqual(code, 1)
+        self.assertIn("tokens:start", err)
+        self.assertEqual(self.guide.read_text(), "# no markers\n")
+        self.assertFalse(self.kt.exists())
+
+    def test_check_notices_a_stale_guide(self):
+        run(self.args)
+        self.guide.write_text(self.guide_text)
+        code, err = run(self.args + ["--check"])
+        self.assertEqual(code, 1)
+        self.assertIn("GUIDE.md", err)
 
     def test_check_fails_when_the_output_is_missing(self):
         self.assertEqual(run(self.args + ["--check"])[0], 1)

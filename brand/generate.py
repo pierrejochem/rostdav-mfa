@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_TOKENS = ROOT / "brand" / "tokens.json"
 DEFAULT_KOTLIN = ROOT / "android/app/src/main/kotlin/app/rustmfa/android/ui/design/Tokens.kt"
 DEFAULT_CSS = ROOT / "site" / "tokens.css"
+DEFAULT_GUIDE = ROOT / "brand" / "GUIDE.md"
+GUIDE_START = "<!-- tokens:start -->"
+GUIDE_END = "<!-- tokens:end -->"
 
 COLOR_KEYS = ["rost500", "rost600", "rost700", "action", "onAction", "ink", "slate", "paper", "surface", "ok", "danger"]
 GRADIENT_KEYS = ["markStart", "markEnd", "iconStart", "iconEnd", "tabStart", "tabEnd"]
@@ -118,19 +121,49 @@ def render_css(t):
     return "\n".join(lines) + "\n"
 
 
+def render_guide_table(t):
+    lines = ["### Colour", "", "| Token | Light | Dark |", "| --- | --- | --- |"]
+    for key in COLOR_KEYS:
+        lines.append("| `%s` | `%s` | `%s` |" % (key, t["colors"]["light"][key], t["colors"]["dark"][key]))
+    lines += ["", "### Gradients", "", "| Token | Value |", "| --- | --- |"]
+    for key in GRADIENT_KEYS:
+        lines.append("| `%s` | `%s` |" % (key, t["gradient"][key]))
+    lines += ["", "### Type scale", "", "| Name | Size (sp) |", "| --- | --- |"]
+    for key in SIZE_KEYS:
+        lines.append("| `%s` | %d |" % (key, t["sizes"][key]))
+    lines += ["", "### Radii", "", "| Name | Size (dp) |", "| --- | --- |"]
+    for key in RADIUS_KEYS:
+        lines.append("| `%s` | %d |" % (key, t["radius"][key]))
+    return "\n".join(lines) + "\n"
+
+
+def apply_guide(text, table):
+    """Replace what is between the two markers; everything else stays byte for byte."""
+    a, b = text.find(GUIDE_START), text.find(GUIDE_END)
+    if a < 0 or b < a:
+        raise TokenError("the guide has no %s ... %s block" % (GUIDE_START, GUIDE_END))
+    return text[: a + len(GUIDE_START)] + "\n" + table + text[b:]
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--check", action="store_true")
     p.add_argument("--tokens", type=Path, default=DEFAULT_TOKENS)
     p.add_argument("--kotlin-out", type=Path, default=DEFAULT_KOTLIN)
     p.add_argument("--css-out", type=Path, default=DEFAULT_CSS)
+    p.add_argument("--guide-out", type=Path, default=DEFAULT_GUIDE)
     args = p.parse_args(argv)
     try:
         tokens = validate(json.loads(args.tokens.read_text()))
     except (TokenError, OSError, ValueError) as e:
         print("tokens error: %s" % e, file=sys.stderr)
         return 1
-    outputs = [(args.kotlin_out, render_kotlin(tokens)), (args.css_out, render_css(tokens))]
+    try:
+        guide_text = apply_guide(args.guide_out.read_text(), render_guide_table(tokens))
+    except (TokenError, OSError) as e:
+        print("guide error: %s" % e, file=sys.stderr)
+        return 1
+    outputs = [(args.kotlin_out, render_kotlin(tokens)), (args.css_out, render_css(tokens)), (args.guide_out, guide_text)]
     if args.check:
         stale = [str(path) for path, text in outputs if not path.exists() or path.read_text() != text]
         for name in stale:
