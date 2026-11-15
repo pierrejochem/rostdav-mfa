@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -37,11 +39,15 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.rustmfa.android.R
 import app.rustmfa.android.ui.RustMfaTheme
+
+private const val MAX_BAR_FONT_SCALE = 1.3f
 
 /** One tab of the floating bar. [badge] is the number of open items, shown as a pill when above zero. */
 data class FloatingTab(val route: String, val label: String, val icon: Int, val badge: Int? = null)
@@ -81,6 +87,9 @@ fun FloatingTabBar(tabs: List<FloatingTab>, selected: String, onSelect: (String)
         }
     val edge = if (dark) Color(0x1FFFFFFF) else Color(0xE6FFFFFF)
     val shadowColor = if (dark) Color(0x80000000) else Color(0x2E7A2A12)
+    // the bar has a fixed height: its labels grow with the system font size, but only up to 1.3 times
+    val density = LocalDensity.current
+    CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = density.fontScale.coerceAtMost(MAX_BAR_FONT_SCALE))) {
     Row(
         modifier
             .testTag("floating-tab-bar")
@@ -96,6 +105,7 @@ fun FloatingTabBar(tabs: List<FloatingTab>, selected: String, onSelect: (String)
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         for (t in tabs) Tab(t, t.route == selected, dark, Modifier.weight(1f), onClick = { onSelect(t.route) })
+    }
     }
 }
 
@@ -123,7 +133,7 @@ private fun Tab(tab: FloatingTab, selected: Boolean, dark: Boolean, modifier: Mo
             val text = tab.badge?.let { badgeText(it) }
             if (text != null) Badge(text, tab.badge, if (dark) Color(0xFF1F2128) else Color(0xFFF7F2EC), Modifier.offset(x = 14.dp, y = (-8).dp))
         }
-        Text(tab.label, color = content, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Text(tab.label, color = content, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
     }
 }
 

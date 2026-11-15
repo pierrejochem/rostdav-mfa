@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.unit.dp
 import app.rustmfa.android.ui.RustMfaTheme
 import org.junit.Rule
@@ -59,6 +60,20 @@ class DesignComponentsTest {
         val long = "x".repeat(300)
         rule.setContent { RustMfaTheme { ListCard(Modifier.width(360.dp)) { ListRow(long, trailing = "Trailing") } } }
         rule.onNodeWithText("Trailing").assertIsDisplayed()
+    }
+
+    @Test fun aLongTrailingValueDoesNotCutTheTitleDownToItsFirstLetter() {
+        val base = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        rule.setContent {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(base, fontScale = 2f),
+            ) { RustMfaTheme { ListCard(Modifier.width(360.dp)) { ListRow("Server", trailing = "http://10.0.2.2:18080/") } } }
+        }
+        val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        rule.onNodeWithText("Server").fetchSemanticsNode().config
+            .getOrNull(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
+        val l = results.first()
+        org.junit.Assert.assertTrue("'Server' is cut: ${l.multiParagraph.maxIntrinsicWidth} > ${l.size.width}", l.multiParagraph.maxIntrinsicWidth <= l.size.width)
     }
 
     @Test fun codeRingDescribesTheTimeLeftNotTheDigits() {

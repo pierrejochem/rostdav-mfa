@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,7 +33,10 @@ fun ListCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() 
     )
 }
 
-/** Title and subtitle are one line each and end in an ellipsis; [trailing] always stays visible. */
+/**
+ * Title and subtitle are one line each and end in an ellipsis. [trailing] stays visible but is capped at 160 dp,
+ * so a long value cannot squeeze the title away.
+ */
 @Composable
 fun ListRow(
     title: String,
@@ -58,7 +62,14 @@ fun ListRow(
             }
         }
         if (trailing != null) {
-            Text(trailing, Modifier.padding(start = 12.dp), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                trailing,
+                Modifier.padding(start = 12.dp).widthIn(max = 160.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
