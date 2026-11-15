@@ -107,6 +107,19 @@ class EncryptedSeedStoreTest {
     }
 
     @Test
+    fun existsIsTrueWhenTheBlobStoreReportsTheFileCorrupt() = runTest {
+        // a blob store whose file cannot even be read as a blob (the Android store reports a broken file this way)
+        val broken = object : BlobStore {
+            override suspend fun read(): ByteArray? = throw VaultCorruptException()
+
+            override suspend fun write(bytes: ByteArray) = error("unused")
+
+            override suspend fun clear() = error("unused")
+        }
+        assertTrue(EncryptedSeedStore(FakeKeyWrapper(), broken).exists())
+    }
+
+    @Test
     fun existsDoesNotTouchTheKeyWrapper() = runTest {
         val s = store()
         s.load()
