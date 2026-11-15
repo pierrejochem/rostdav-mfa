@@ -40,6 +40,8 @@ fun scanOutcome(text: String, lastRejected: String?, lastRejectedAt: Long, now: 
 /** The scanner for an authenticator code: an invalid code shows a banner and scanning goes on; a valid one is handed over once. */
 @Composable
 fun VaultScanScreen(onAccount: (OtpAccount) -> Unit, onManual: () -> Unit, onBack: () -> Unit) {
+    // the camera preview shows the QR code, which carries the secret
+    SecureWhile(true)
     var lastRejected by remember { mutableStateOf<String?>(null) }
     var lastRejectedAt by remember { mutableLongStateOf(0L) }
     var message by remember { mutableStateOf<Int?>(null) }

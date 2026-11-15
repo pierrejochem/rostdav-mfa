@@ -54,6 +54,8 @@ fun ConfirmAccountScreen(
     onBack: () -> Unit,
     message: String? = null,
 ) {
+    // live codes of an account not yet saved: secure whatever the vault state
+    SecureWhile(true)
     var issuer by rememberSaveable { mutableStateOf(account.issuer) }
     var label by rememberSaveable { mutableStateOf(account.label) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

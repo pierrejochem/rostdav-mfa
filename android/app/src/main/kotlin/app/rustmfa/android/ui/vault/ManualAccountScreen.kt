@@ -40,6 +40,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import app.rustmfa.android.R
 import app.rustmfa.android.ui.RustMfaTheme
 import app.rustmfa.android.ui.design.BannerKind
@@ -59,8 +61,12 @@ import app.rustmfa.vault.OtpType
  */
 @Composable
 fun ManualAccountScreen(form: ManualAccountForm, onAdd: (OtpAccount) -> Unit, onBack: () -> Unit, message: String? = null) {
-    // not saveable on purpose: after a recreation the secret is dots again
+    // the typed secret is on this screen: it holds FLAG_SECURE itself, also on a locked vault (after a lock or a
+    // process restart the root holder has let go)
+    SecureWhile(true)
+    // not saveable on purpose: after a recreation the secret is dots again; leaving the app hides it too
     var showSecret by remember { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { showSecret = false }
     var advanced by rememberSaveable { mutableStateOf(false) }
     var nameTouched by rememberSaveable { mutableStateOf(false) }
     val result = form.validate()
