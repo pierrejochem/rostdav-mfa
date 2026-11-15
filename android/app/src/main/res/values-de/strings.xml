@@ -80,4 +80,7 @@
     <string name="audit_number_mismatch">Falsche Zahl gewählt</string>
     <string name="reconnect_title">Gerät neu verbinden</string>
     <string name="reconnect_server">Server: %1$s</string>
+    <string name="code_ring_description">Code, noch %1$d Sekunden</string>
+    <string name="number_choice_description">Zahl %1$d</string>
+    <string name="brand_name">rostdav-mfa</string>
 </resources>
