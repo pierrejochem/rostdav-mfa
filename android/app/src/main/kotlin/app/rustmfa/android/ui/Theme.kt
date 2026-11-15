@@ -12,8 +12,10 @@ import app.rustmfa.android.ui.design.rostdavTypography
 
 internal fun lightScheme(): ColorScheme =
     lightColorScheme(
-        primary = Tokens.Light.rost600,
-        onPrimary = Tokens.Light.onRost,
+        primary = Tokens.Light.action,
+        onPrimary = Tokens.Light.onAction,
+        tertiary = Tokens.Light.rost600,
+        onTertiary = Tokens.Light.paper,
         primaryContainer = lerp(Tokens.Light.paper, Tokens.Light.rost500, 0.12f),
         onPrimaryContainer = Tokens.Light.rost700,
         secondary = Tokens.Light.rost500,
@@ -27,8 +29,10 @@ internal fun lightScheme(): ColorScheme =
 
 internal fun darkScheme(): ColorScheme =
     darkColorScheme(
-        primary = Tokens.Dark.rost600,
-        onPrimary = Tokens.Dark.onRost,
+        primary = Tokens.Dark.action,
+        onPrimary = Tokens.Dark.onAction,
+        tertiary = Tokens.Dark.rost600,
+        onTertiary = Tokens.Dark.paper,
         primaryContainer = lerp(Tokens.Dark.paper, Tokens.Dark.rost500, 0.12f),
         onPrimaryContainer = Tokens.Dark.rost700,
         secondary = Tokens.Dark.rost500,

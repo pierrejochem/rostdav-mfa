@@ -13,7 +13,7 @@ PAIRS = [
     ("ink", "surface", 4.5),
     ("slate", "paper", 4.5),
     ("slate", "surface", 4.5),
-    ("onRost", "rost600", 4.5),
+    ("onAction", "action", 4.5),
     ("rost600", "paper", 4.5),
     ("rost600", "surface", 4.5),
     ("ok", "surface", 4.5),

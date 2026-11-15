@@ -1,5 +1,6 @@
 package app.rustmfa.android.ui.design
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -30,7 +31,12 @@ fun BrandButton(
     when (kind) {
         ButtonKind.Filled -> Button(onClick, m, enabled, shape = shape) { label() }
         ButtonKind.Tonal -> FilledTonalButton(onClick, m, enabled, shape = shape) { label() }
-        ButtonKind.Outlined -> OutlinedButton(onClick, m, enabled, shape = shape) { label() }
+        ButtonKind.Outlined ->
+            OutlinedButton(
+                onClick, m, enabled, shape = shape,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.tertiary),
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.tertiary),
+            ) { label() }
         ButtonKind.Destructive ->
             Button(
                 onClick, m, enabled, shape = shape,

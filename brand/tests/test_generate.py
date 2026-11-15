@@ -47,7 +47,7 @@ class GenerateTest(unittest.TestCase):
         run(self.args)
         text = self.css.read_text()
         self.assertIn("  --rost-500: #E26A2E;\n", text)
-        self.assertIn("  --on-rost: #FFFFFF;\n", text)
+        self.assertIn("  --on-action: #FFFFFF;\n", text)
         self.assertIn("@media (prefers-color-scheme: dark) {\n  :root {\n    --rost-500: #FF9A66;\n", text)
 
     def test_missing_color_key_fails_naming_the_key_and_writes_nothing(self):

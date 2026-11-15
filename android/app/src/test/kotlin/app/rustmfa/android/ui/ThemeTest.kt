@@ -10,8 +10,9 @@ import kotlin.test.assertEquals
 class ThemeTest {
     @Test fun lightSchemeMapsTheLightTokens() {
         val s = lightScheme()
-        assertEquals(Tokens.Light.rost600, s.primary)
-        assertEquals(Tokens.Light.onRost, s.onPrimary)
+        assertEquals(Tokens.Light.action, s.primary)
+        assertEquals(Tokens.Light.onAction, s.onPrimary)
+        assertEquals(Tokens.Light.rost600, s.tertiary)
         assertEquals(Tokens.Light.rost500, s.secondary)
         assertEquals(Tokens.Light.paper, s.background)
         assertEquals(Tokens.Light.surface, s.surface)
@@ -23,8 +24,9 @@ class ThemeTest {
 
     @Test fun darkSchemeMapsTheDarkTokens() {
         val s = darkScheme()
-        assertEquals(Tokens.Dark.rost600, s.primary)
-        assertEquals(Tokens.Dark.onRost, s.onPrimary)
+        assertEquals(Tokens.Dark.action, s.primary)
+        assertEquals(Tokens.Dark.onAction, s.onPrimary)
+        assertEquals(Tokens.Dark.rost600, s.tertiary)
         assertEquals(Tokens.Dark.paper, s.background)
         assertEquals(Tokens.Dark.danger, s.error)
     }

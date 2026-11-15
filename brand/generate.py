@@ -15,7 +15,7 @@ DEFAULT_TOKENS = ROOT / "brand" / "tokens.json"
 DEFAULT_KOTLIN = ROOT / "android/app/src/main/kotlin/app/rustmfa/android/ui/design/Tokens.kt"
 DEFAULT_CSS = ROOT / "site" / "tokens.css"
 
-COLOR_KEYS = ["rost500", "rost600", "rost700", "onRost", "ink", "slate", "paper", "surface", "ok", "danger"]
+COLOR_KEYS = ["rost500", "rost600", "rost700", "action", "onAction", "ink", "slate", "paper", "surface", "ok", "danger"]
 GRADIENT_KEYS = ["markStart", "markEnd", "iconStart", "iconEnd"]
 SIZE_KEYS = ["headline", "title", "body", "label", "caption"]
 RADIUS_KEYS = ["chip", "card", "sheet", "button"]

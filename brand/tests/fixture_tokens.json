@@ -4,25 +4,27 @@
       "rost500": "#E26A2E",
       "rost600": "#BC501C",
       "rost700": "#8F3A12",
-      "onRost": "#FFFFFF",
       "ink": "#1B2A41",
       "slate": "#5B6B80",
       "paper": "#FAF6F1",
       "surface": "#FFFFFF",
       "ok": "#2E7D4F",
-      "danger": "#B3261E"
+      "danger": "#B3261E",
+      "action": "#B8441A",
+      "onAction": "#FFFFFF"
     },
     "dark": {
       "rost500": "#FF9A66",
       "rost600": "#FFB68A",
       "rost700": "#FFD2B8",
-      "onRost": "#3A1500",
       "ink": "#F4ECE6",
       "slate": "#B9ADA5",
       "paper": "#171210",
       "surface": "#221A16",
       "ok": "#6FCF97",
-      "danger": "#F2B8B5"
+      "danger": "#F2B8B5",
+      "action": "#C2491D",
+      "onAction": "#FFFFFF"
     }
   },
   "gradient": {
