@@ -8,6 +8,7 @@ import app.rustmfa.android.ui.design.FloatingTab
 import app.rustmfa.android.ui.design.BarClearance
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -74,7 +75,9 @@ fun AppNavigation(
     val route = entry?.destination?.route
     val showBar = route != null && route != Dest.ONBOARDING && route != Dest.RECONNECT && route != Dest.APPROVE
     val tabs = Tabs.map { FloatingTab(it.route, stringResource(it.label), it.icon, if (it.route == Dest.REQUESTS) pendingCount else null) }
-    Scaffold(containerColor = Color.Transparent, contentWindowInsets = WindowInsets.statusBars) { padding ->
+    // screens with the floating bar draw under the system navigation area (the bar pads itself); the others,
+    // which have forms and bottom buttons, stay clear of the navigation bar and the keyboard
+    Scaffold(containerColor = Color.Transparent, contentWindowInsets = if (showBar) WindowInsets.statusBars else WindowInsets.safeDrawing) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             CompositionLocalProvider(LocalBarClearance provides if (showBar) BarClearance else 0.dp) {
                 NavHost(nav, startDestination = if (needsReconnect) Dest.RECONNECT else if (enrolled) Dest.HOME else Dest.ONBOARDING, modifier = Modifier.fillMaxSize()) {
@@ -104,7 +107,7 @@ fun AppNavigation(
                             restoreState = true
                         }
                     },
-                    modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 26.dp),
+                    modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 26.dp),
                 )
             }
         }

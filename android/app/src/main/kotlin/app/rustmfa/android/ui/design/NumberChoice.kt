@@ -1,5 +1,6 @@
 package app.rustmfa.android.ui.design
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
@@ -23,12 +24,13 @@ fun NumberChoice(number: Int, onClick: () -> Unit, modifier: Modifier = Modifier
         onClick,
         modifier.heightIn(min = 72.dp).semantics { contentDescription = description },
         shape = RoundedCornerShape(Tokens.radiusButton),
+        contentPadding = PaddingValues(horizontal = 4.dp),
         colors = ButtonDefaults.filledTonalButtonColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ),
     ) {
-        Text(number.toString(), style = CodeStyle)
+        Text(number.toString(), style = CodeStyle, maxLines = 1, softWrap = false)
     }
 }
 

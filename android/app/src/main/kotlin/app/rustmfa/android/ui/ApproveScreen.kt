@@ -114,8 +114,8 @@ private fun PendingBody(state: ChallengeState.Pending, onPick: (Int) -> Unit, on
         )
     }
     ListCard {
-        ListRow(stringResource(R.string.approve_device, d.loginDevice))
-        d.approximateLocation?.let { ListRow(stringResource(R.string.approve_location, it)) }
+        ListRow(stringResource(R.string.approve_device, d.loginDevice), titleMaxLines = 3)
+        d.approximateLocation?.let { ListRow(stringResource(R.string.approve_location, it), titleMaxLines = 3) }
     }
     Text(
         stringResource(R.string.approve_left, state.secondsLeft),

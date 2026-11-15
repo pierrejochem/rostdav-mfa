@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
@@ -90,6 +92,17 @@ class OnboardingScreenTest {
             assertTrue(layout.multiParagraph.maxIntrinsicWidth <= layout.size.width, "'$label' is clipped: ${layout.multiParagraph.maxIntrinsicWidth} > ${layout.size.width}")
             assertFalse(layout.didOverflowHeight, "'$label' overflows its height")
         }
+    }
+
+    @Test
+    fun theFailureScreenScrollsToItsButtonAtTwiceTheFontSize() {
+        val base = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides androidx.compose.ui.unit.Density(base, fontScale = 2f)) {
+                RustMfaTheme { OnboardingFailed("The server could not be reached. ".repeat(6), onRetry = {}) }
+            }
+        }
+        rule.onNodeWithText("Try again").performScrollTo().assertIsDisplayed()
     }
 
     private fun textLayout(config: androidx.compose.ui.semantics.SemanticsConfiguration): TextLayoutResult {

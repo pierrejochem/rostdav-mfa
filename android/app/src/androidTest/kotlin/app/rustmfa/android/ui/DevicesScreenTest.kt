@@ -1,5 +1,8 @@
 package app.rustmfa.android.ui
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -53,5 +56,23 @@ class DevicesScreenTest {
         assertEquals(emptyList(), api.revoked)
         rule.onNodeWithText("Cancel").performClick()
         assertEquals(emptyList(), api.revoked)
+    }
+
+    @Test
+    fun theDeviceNameKeepsItsRoomAtTwiceTheFontSize() {
+        val api = Api()
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        val vm = DevicesViewModel(api, "dev_1", SessionGuard(store, KeyStoreDeviceKey(ctx)))
+        val base = ctx.resources.displayMetrics.density
+        rule.setContent {
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalDensity provides androidx.compose.ui.unit.Density(base, fontScale = 2f),
+            ) { RustMfaTheme { androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.width(360.dp)) { DevicesScreen(vm, onThisPhoneRevoked = {}) } } }
+        }
+        val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        rule.onNodeWithText("Pixel").fetchSemanticsNode().config
+            .getOrNull(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
+        val l = results.first()
+        assertEquals(true, l.multiParagraph.maxIntrinsicWidth <= l.size.width, "'Pixel' is cut: ${l.multiParagraph.maxIntrinsicWidth} > ${l.size.width}")
     }
 }

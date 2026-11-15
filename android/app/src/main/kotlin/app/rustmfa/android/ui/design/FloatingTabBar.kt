@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -133,7 +134,15 @@ private fun Tab(tab: FloatingTab, selected: Boolean, dark: Boolean, modifier: Mo
             val text = tab.badge?.let { badgeText(it) }
             if (text != null) Badge(text, tab.badge, if (dark) Color(0xFF1F2128) else Color(0xFFF7F2EC), Modifier.offset(x = 14.dp, y = (-8).dp))
         }
-        Text(tab.label, color = content, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+        Text(
+            tab.label,
+            color = content,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            autoSize = TextAutoSize.StepBased(minFontSize = 9.sp, maxFontSize = 13.sp, stepSize = 0.5.sp),
+        )
     }
 }
 

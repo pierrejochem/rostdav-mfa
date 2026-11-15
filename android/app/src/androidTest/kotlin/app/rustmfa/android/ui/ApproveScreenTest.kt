@@ -6,9 +6,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.width
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
@@ -32,6 +36,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
+
+private fun Modifier.androidx_width360(): Modifier = this.width(360.dp)
 
 class ApproveScreenTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
@@ -83,6 +89,33 @@ class ApproveScreenTest {
         val long = details.copy(serviceName = "S".repeat(300), loginDevice = "D".repeat(300))
         rule.setContent { RustMfaTheme { ApproveContent(ChallengeState.Pending(long, 27), {}, {}, {}, {}) } }
         rule.onNodeWithText("Deny").performScrollTo().assertIsDisplayed()
+    }
+
+    private fun layoutOf(text: String): androidx.compose.ui.text.TextLayoutResult {
+        val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        rule.onNodeWithText(text).fetchSemanticsNode().config
+            .getOrNull(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
+        return results.first()
+    }
+
+    @Test
+    fun theNumberDigitsStayOnOneLineAtTwiceTheFontSize() {
+        val base = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.density
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(base, fontScale = 2f)) {
+                RustMfaTheme { androidx.compose.foundation.layout.Box(Modifier.androidx_width360()) { ApproveContent(ChallengeState.Pending(details, 27), {}, {}, {}, {}) } }
+            }
+        }
+        for (n in listOf("12", "47", "83")) assertEquals(1, layoutOf(n).lineCount, "'$n' wraps")
+    }
+
+    @Test
+    fun aLongDeviceNameIsShownOnSeveralLinesNotCutAtOne() {
+        val long = details.copy(loginDevice = "Firefox on Linux (Ubuntu 24.04) via the office VPN in the second building")
+        rule.setContent { RustMfaTheme { ApproveContent(ChallengeState.Pending(long, 27), {}, {}, {}, {}) } }
+        val l = layoutOf("Device: ${long.loginDevice}")
+        assertTrue(l.lineCount in 2..3, "device line count ${l.lineCount}")
+        assertTrue(!l.hasVisualOverflow || l.lineCount == 3)
     }
 
     @Test

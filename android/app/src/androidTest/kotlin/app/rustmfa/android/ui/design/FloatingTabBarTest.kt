@@ -22,6 +22,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.width
 import app.rustmfa.android.R
 import app.rustmfa.android.ui.RustMfaTheme
 import kotlin.test.assertEquals
@@ -96,8 +97,20 @@ class FloatingTabBarTest {
                 RustMfaTheme { FloatingTabBar(german, "home", {}) }
             }
         }
-        for (t in german) assertEquals(1, layout(t.label).lineCount, "'${t.label}' wraps")
+        for (t in german) {
+            val l = layout(t.label)
+            assertEquals(1, l.lineCount, "'${t.label}' wraps")
+            assertTrue(l.multiParagraph.maxIntrinsicWidth <= l.size.width, "'${t.label}' is cut: ${l.multiParagraph.maxIntrinsicWidth} > ${l.size.width}")
+        }
         rule.onNodeWithTag("floating-tab-bar").assertHeightIsEqualTo(76.dp)
+    }
+
+    @Test fun germanLabelsFitOnA320dpPhoneToo() {
+        rule.setContent { RustMfaTheme { androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.width(320.dp)) { FloatingTabBar(german, "home", {}) } } }
+        for (t in german) {
+            val l = layout(t.label)
+            assertTrue(l.multiParagraph.maxIntrinsicWidth <= l.size.width, "'${t.label}' is cut on 320 dp: ${l.multiParagraph.maxIntrinsicWidth} > ${l.size.width}")
+        }
     }
 
     @Test fun twiceTheFontSizeEnlargesTheBarLabelsByAtMostAThird() {

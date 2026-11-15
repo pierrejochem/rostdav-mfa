@@ -86,8 +86,8 @@ fun DevicesScreen(vm: DevicesViewModel, onThisPhoneRevoked: () -> Unit) {
                         d.deviceName,
                         subtitle = d.lastSeenAt?.let { stringResource(R.string.devices_last_seen, it) } ?: stringResource(R.string.devices_never_seen),
                         leading = { AppIconTile(d.deviceName) },
-                        trailing = if (row.isThisPhone) stringResource(R.string.devices_this) else null,
                     )
+                    if (row.isThisPhone) ListRow(stringResource(R.string.devices_this))
                     if (d.strongbox) ListRow(stringResource(R.string.devices_strongbox))
                     if (d.status == DeviceStatus.Revoked) {
                         ListRow(stringResource(R.string.devices_revoked))

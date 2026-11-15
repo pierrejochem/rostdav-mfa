@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -71,7 +72,7 @@ fun ScanScreen(onText: (String) -> Unit, onManual: () -> Unit, onBack: () -> Uni
             BrandButton(stringResource(R.string.back), onClick = onBack, kind = ButtonKind.Tonal, modifier = Modifier.align(Alignment.BottomStart).padding(16.dp))
         }
     } else {
-        Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(24.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
             if (denied) StatusBanner(BannerKind.Error, stringResource(R.string.scan_permission_denied))
             BrandButton(stringResource(R.string.scan_button), onClick = { launcher.launch(Manifest.permission.CAMERA) }, modifier = Modifier.fillMaxWidth())
             BrandButton(stringResource(R.string.manual_button), onClick = onManual, kind = ButtonKind.Outlined, modifier = Modifier.fillMaxWidth())

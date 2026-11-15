@@ -35,7 +35,8 @@ fun ListCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() 
 
 /**
  * Title and subtitle are one line each and end in an ellipsis. [trailing] stays visible but is capped at 160 dp,
- * so a long value cannot squeeze the title away.
+ * so a long value cannot squeeze the title away. [titleMaxLines] lets facts the user must read, like a device name,
+ * wrap instead of being cut.
  */
 @Composable
 fun ListRow(
@@ -45,6 +46,7 @@ fun ListRow(
     trailing: String? = null,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
+    titleMaxLines: Int = 1,
 ) {
     val base = if (onClick != null) modifier.clickable(role = Role.Button, onClick = onClick) else modifier
     Row(
@@ -56,7 +58,7 @@ fun ListRow(
             androidx.compose.foundation.layout.Spacer(Modifier.padding(start = 12.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, style = MaterialTheme.typography.titleSmall, maxLines = titleMaxLines, overflow = TextOverflow.Ellipsis)
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }

@@ -67,15 +67,21 @@ fun OnboardingScreen(vm: OnboardingViewModel, defaultName: String, onDone: () ->
             }
         }
         OnboardingState.Enrolling ->
-            Column(Modifier.fillMaxSize().brandWash().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 CircularProgressIndicator()
                 Text(stringResource(R.string.enrolling))
             }
         is OnboardingState.Failed ->
-            Column(Modifier.fillMaxSize().brandWash().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                StatusBanner(BannerKind.Error, stringResource(failureMessage(s)))
-                BrandButton(stringResource(R.string.try_again), onClick = vm::reset, modifier = Modifier.fillMaxWidth())
-            }
+            OnboardingFailed(stringResource(failureMessage(s)), onRetry = vm::reset)
+    }
+}
+
+/** What the user sees when connecting failed: the reason and a way to try again. Scrolls at any font size. */
+@Composable
+fun OnboardingFailed(message: String, onRetry: () -> Unit) {
+    Column(Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        StatusBanner(BannerKind.Error, message)
+        BrandButton(stringResource(R.string.try_again), onClick = onRetry, modifier = Modifier.fillMaxWidth())
     }
 }
 
