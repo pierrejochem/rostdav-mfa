@@ -21,6 +21,10 @@ internal fun lightScheme(): ColorScheme =
         primaryContainer = lerp(Tokens.Light.paper, Tokens.Light.rost500, 0.12f),
         onPrimaryContainer = Tokens.Light.rost700,
         secondary = Tokens.Light.rost500,
+        // the Tonal button (and anything else on secondaryContainer): the same rust tint as the number choice,
+        // instead of Material's default lavender
+        secondaryContainer = lerp(Tokens.Light.paper, Tokens.Light.rost500, 0.12f),
+        onSecondaryContainer = Tokens.Light.rost700,
         background = Tokens.Light.paper,
         onBackground = Tokens.Light.ink,
         surface = Tokens.Light.surface,
@@ -38,6 +42,10 @@ internal fun darkScheme(): ColorScheme =
         primaryContainer = lerp(Tokens.Dark.paper, Tokens.Dark.rost500, 0.12f),
         onPrimaryContainer = Tokens.Dark.rost700,
         secondary = Tokens.Dark.rost500,
+        // the Tonal button (and anything else on secondaryContainer): the same rust tint as the number choice,
+        // instead of Material's default lavender
+        secondaryContainer = lerp(Tokens.Dark.paper, Tokens.Dark.rost500, 0.12f),
+        onSecondaryContainer = Tokens.Dark.rost700,
         background = Tokens.Dark.paper,
         onBackground = Tokens.Dark.ink,
         surface = Tokens.Dark.surface,

@@ -20,6 +20,9 @@ class ThemeTest {
         assertEquals(Tokens.Light.slate, s.onSurfaceVariant)
         assertEquals(Tokens.Light.danger, s.error)
         assertEquals(lerp(Tokens.Light.paper, Tokens.Light.rost500, 0.12f), s.primaryContainer)
+        // the Tonal button's colours: the rust tint, not Material's default lavender
+        assertEquals(s.primaryContainer, s.secondaryContainer)
+        assertEquals(Tokens.Light.rost700, s.onSecondaryContainer)
     }
 
     @Test fun darkSchemeMapsTheDarkTokens() {
@@ -29,6 +32,8 @@ class ThemeTest {
         assertEquals(Tokens.Dark.rost600, s.tertiary)
         assertEquals(Tokens.Dark.paper, s.background)
         assertEquals(Tokens.Dark.danger, s.error)
+        assertEquals(lerp(Tokens.Dark.paper, Tokens.Dark.rost500, 0.12f), s.secondaryContainer)
+        assertEquals(Tokens.Dark.rost700, s.onSecondaryContainer)
     }
 
     @Test fun typographyFollowsTheScale() {
