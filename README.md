@@ -20,7 +20,7 @@ The app also keeps the one-time codes (TOTP and HOTP) of your other accounts in 
 | `android/` | The Android app (Kotlin, Jetpack Compose). See [`android/README.md`](android/README.md). |
 | `contract/` | The shared signing contract (a Rust crate) with test vectors that the Rostdav server and the app both run. |
 | `brand/` | Design tokens, logo kit, brand guide and store listing material. Tokens in `brand/tokens.json` generate the app's `Tokens.kt` and the site's `tokens.css`. |
-| `media/` | Screenshots, light and dark: taken on an emulator against a real Rostdav, or rendered from the app's screens by tests where the window blocks capture (Approve and the vault). |
+| `media/` | Screenshots, light and dark: taken on an emulator against a real Rostdav, or rendered from the app's screens by tests where the window blocks capture (Approve and the vault; the locked Overview and Settings are rendered too, so the set looks alike). |
 
 ## Screenshots
 

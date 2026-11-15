@@ -17,7 +17,7 @@ Das bekommst du
 • Zahlenabgleich: Eine Anfrage, die du nicht gestartet hast, lässt sich nicht aus Versehen freigeben.
 • Eine Übersicht der wartenden Anfragen, mit Zähler auf dem Reiter Anfragen.
 • Deine Telefone und die letzten Anmelde-Ereignisse, und eine Möglichkeit, ein Telefon zu entfernen.
-• Einmalcodes: Hinzufügen per Scan oder von Hand, den ersten Code vor dem Speichern prüfen, umbenennen und löschen.
+• Einmalcodes: Hinzufügen per Scan (Namen und ersten Code vor dem Speichern prüfen) oder von Hand, umbenennen und löschen.
 • Sichern und wiederherstellen: eine mit deiner Passphrase verschlüsselte Datei, gespeichert, wo du willst. Solange es keine Sicherung gibt, erinnert dich die App daran.
 • Lässt sich der Tresor nicht öffnen, stellst du eine Sicherung wieder her oder beginnst einen neuen Tresor.
 • Dunkles und helles Design, Deutsch und Englisch.

@@ -17,7 +17,7 @@ What you get
 • Number matching, so a request you did not start cannot be approved by accident.
 • An overview of waiting requests, with a count on the Requests tab.
 • Your phones and the latest sign-in events, and a way to remove a phone.
-• One-time codes: add by scan or by hand, check the first code before saving, rename and delete.
+• One-time codes: add by scan (check the names and the first code before saving) or by hand, rename and delete.
 • Backup and restore: a file encrypted with your passphrase, saved where you choose. The app reminds you while there is no backup.
 • If the vault cannot be opened, you can restore a backup or start a new vault.
 • Dark and light themes, English and German.

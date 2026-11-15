@@ -86,6 +86,17 @@ class SiteTest(unittest.TestCase):
         self.assertNotIn("planned", en.lower())
         self.assertIn("Authenticator", de)
         self.assertNotIn("geplant", de.lower())
+        # words the vault copy brought in; absent from the pages before the vault
+        self.assertIn("backup", en.lower())
+        self.assertIn("Sicherung", de)
+
+    def test_the_clipboard_clear_is_called_best_effort(self):
+        en = " ".join(scan("index.html").text).lower()
+        de = " ".join(scan("index.de.html").text)
+        self.assertIn("clipboard", en)
+        self.assertIn("best effort", en)
+        self.assertIn("Zwischenablage", de)
+        self.assertIn("nach Möglichkeit", de)
 
 
 if __name__ == "__main__":

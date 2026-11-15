@@ -4,7 +4,7 @@ Native Android app for rostdav-mfa push approval (spec phases 2 to 4). The app t
 
 ## Screenshots
 
-Pictures 01 to 03, 06 and 08 were taken on the emulator against a real Rostdav. The other screens block screen capture (`FLAG_SECURE`: Approve, the Overview while the vault is unlocked, and the add, backup and restore screens), so their pictures are rendered from the real composables with sample data: Approve by `ScreenshotsTest`, the vault screens and Settings by `VaultScreenshotsTest`. The vault pictures use made-up services and public test secrets. `VaultScreenshotsTest` is opt-in (it is skipped unless the instrumentation argument `screenshots` is `true`); its class comment has the commands.
+Pictures 01 to 03, 06 and 08 were taken on the emulator against a real Rostdav. The other pictures are rendered from the real composables with sample data. Most of those screens block screen capture (`FLAG_SECURE`: Approve, the Overview while the vault is unlocked, and the add, backup and restore screens); 04 (vault locked) and 07 (Settings) do not, but are rendered the same way so the set looks alike. The renderers: Approve by `ScreenshotsTest`, the vault screens and Settings by `VaultScreenshotsTest`. The vault pictures use made-up services and public test secrets. `VaultScreenshotsTest` is opt-in (it is skipped unless the instrumentation argument `screenshots` is `true`); its class comment has the commands.
 
 | Screen | Dark | Light |
 | --- | --- | --- |
