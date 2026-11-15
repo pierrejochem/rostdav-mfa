@@ -109,7 +109,8 @@ object OtpAuthUri {
                 i += Character.charCount(cp)
             }
         }
-        return out.toString(Charsets.UTF_8)
+        // Not out.toString(Charsets.UTF_8): that resolves to a JDK member Android has only since API 33.
+        return String(out.toByteArray(), Charsets.UTF_8)
     }
 
     private fun hex(c: Char): Int = Character.digit(c, 16)
