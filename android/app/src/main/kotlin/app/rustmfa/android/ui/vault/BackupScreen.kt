@@ -24,7 +24,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,29 +63,26 @@ import app.rustmfa.android.vault.passphraseProblem
 internal val BACKUP_TYPES = arrayOf("application/json", "*/*")
 
 /**
- * The Backup screen with the system file pickers: Create opens `CreateDocument` with [backupFileName], Restore
+ * The Backup screen with the system file pickers: Create hands the passphrases to [BackupViewModel.prepare], which
+ * opens the vault first; only then does `CreateDocument` open with [backupFileName] (the picker creates the file, so
+ * a cancelled prompt must come before it). The passphrase waits in the view model, never in saved state. Restore
  * opens `OpenDocument` and then asks for the passphrase. [startRestore] opens the restore picker once on arrival
  * (from "Import a backup" on the Add screen).
  */
 @Composable
 fun BackupScreen(vm: BackupViewModel, onBack: () -> Unit, startRestore: Boolean = false) {
     val state by vm.state.collectAsState()
-    // the typed passphrases, held only while the save picker is open; never saved state
-    val pending = remember { arrayOfNulls<CharArray>(2) }
-    fun dropPending() {
-        pending.forEach { it?.fill(Char(0)) }
-        pending.fill(null)
-    }
-    DisposableEffect(Unit) { onDispose { dropPending() } }
+    // true from the launch of the save picker until its result: a recomposition or rotation must not open a second one
+    var pickerOpen by rememberSaveable { mutableStateOf(false) }
     val createLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-        val passphrase = pending[0]
-        val repeat = pending[1]
-        pending.fill(null)
-        if (uri != null && passphrase != null && repeat != null) {
-            vm.create(passphrase, repeat, uri)
-        } else {
-            passphrase?.fill(Char(0))
-            repeat?.fill(Char(0))
+        pickerOpen = false
+        vm.fileChosen(uri)
+    }
+    // the view model has opened the vault and holds the passphrase: now the picker may create the file
+    LaunchedEffect(state) {
+        if (state == BackupState.ChooseFile && !pickerOpen) {
+            pickerOpen = true
+            createLauncher.launch(backupFileName(System.currentTimeMillis()))
         }
     }
     // the picked file is no secret: it may survive a rotation while the passphrase dialog is open
@@ -102,12 +98,7 @@ fun BackupScreen(vm: BackupViewModel, onBack: () -> Unit, startRestore: Boolean 
     BackupContent(
         state = state,
         askRestorePassphrase = source != null,
-        onCreate = { passphrase, repeat ->
-            dropPending()
-            pending[0] = passphrase
-            pending[1] = repeat
-            createLauncher.launch(backupFileName(System.currentTimeMillis()))
-        },
+        onCreate = vm::prepare,
         onPickSource = { openLauncher.launch(BACKUP_TYPES) },
         onRestore = { passphrase ->
             val picked = source
@@ -146,7 +137,8 @@ fun BackupContent(
             repeat = ""
         }
     }
-    val working = state == BackupState.Working
+    // ChooseFile: the save picker is opening or open
+    val working = state == BackupState.Working || state == BackupState.ChooseFile
     // leaving while the key is derived would drop the result half way
     BackHandler(enabled = working) {}
     val problem = run {
@@ -227,7 +219,7 @@ fun BackupContent(
 @Composable
 private fun Status(state: BackupState) {
     when (state) {
-        BackupState.Idle -> Unit
+        BackupState.Idle, BackupState.ChooseFile -> Unit
         BackupState.Working -> {
             val working = stringResource(R.string.backup_working)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

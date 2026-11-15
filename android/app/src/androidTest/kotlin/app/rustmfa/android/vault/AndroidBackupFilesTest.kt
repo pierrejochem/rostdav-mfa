@@ -35,6 +35,19 @@ class AndroidBackupFilesTest {
         assertEquals("short", String(files.read(uri, 1024)))
     }
 
+    @Test fun deleteRemovesAWrittenFile() = runBlocking {
+        val file = File(dir, "partial.json")
+        val uri = Uri.fromFile(file)
+        files.write(uri, "half".toByteArray())
+        files.delete(uri)
+        kotlin.test.assertFalse(file.exists(), "the partial backup was left behind")
+    }
+
+    @Test fun deleteOfAMissingOrForeignUriDoesNotThrow() = runBlocking {
+        files.delete(Uri.fromFile(File(dir, "never.json")))
+        files.delete(Uri.parse("content://app.rustmfa.nothing/document/1"))
+    }
+
     @Test fun aFileOverTheCapThrowsBackupFormatException() {
         val file = File(dir, "big.json").apply { writeBytes(ByteArray(2048)) }
         assertFailsWith<BackupFormatException> { runBlocking { files.read(Uri.fromFile(file), 1024) } }

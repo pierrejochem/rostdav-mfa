@@ -1,6 +1,10 @@
 package app.rustmfa.android.vault
 
 import android.net.Uri
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import app.rustmfa.android.R
 import app.rustmfa.vault.BackupDecryptException
 import app.rustmfa.vault.BackupFormatException
@@ -20,6 +24,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -82,8 +87,18 @@ class BackupViewModelTest {
             return readCapped(counting, maxBytes)
         }
 
+        var failWrite: IOException? = null
+        var failDelete: IOException? = null
+        val deleted = mutableListOf<Uri>()
+
         override suspend fun write(uri: Uri, bytes: ByteArray) {
+            failWrite?.let { throw it }
             written = bytes.copyOf()
+        }
+
+        override suspend fun delete(uri: Uri) {
+            deleted += uri
+            failDelete?.let { throw it }
         }
     }
 
@@ -123,11 +138,29 @@ class BackupViewModelTest {
 
     private fun CharArray.isZeroed() = all { it == '\u0000' }
 
+    /** Both steps of a create: the passphrases (unlock, then hold), then the file the picker created. */
+    private fun TestScope.create(vm: BackupViewModel, passphrase: CharArray, repeat: CharArray, target: Uri = uri) {
+        vm.prepare(passphrase, repeat)
+        drain()
+        if (vm.state.value == BackupState.ChooseFile) {
+            vm.fileChosen(target)
+            drain()
+        }
+    }
+
+    private val uri = fakeUri()
+
+    /** The fake Uri cannot run equals(): compare by identity. */
+    private fun assertDeletedOnce() {
+        assertEquals(1, files.deleted.size, "deleted: ${files.deleted.size}")
+        assertSame(uri, files.deleted[0])
+    }
+
     @Test fun `a passphrase of seven characters fails, writes nothing and never derives`() = runTest(main) {
         openVault(github)
         val vm = viewModel()
         val pass = "abcdefg".toCharArray()
-        vm.create(pass, "abcdefg".toCharArray(), fakeUri())
+        vm.prepare(pass, "abcdefg".toCharArray())
         drain()
         assertEquals(BackupState.Failed(R.string.backup_error_short), vm.state.value)
         assertNull(files.written)
@@ -140,7 +173,7 @@ class BackupViewModelTest {
         openVault(github)
         val vm = viewModel()
         val repeat = "correct horse!".toCharArray()
-        vm.create("correct horse".toCharArray(), repeat, fakeUri())
+        vm.prepare("correct horse".toCharArray(), repeat)
         drain()
         assertEquals(BackupState.Failed(R.string.backup_error_mismatch), vm.state.value)
         assertNull(files.written)
@@ -148,12 +181,17 @@ class BackupViewModelTest {
         assertTrue(repeat.isZeroed())
     }
 
-    @Test fun `a valid create exports on io, writes the exported bytes, records the date and ends Saved`() = runTest(main) {
+    @Test fun `valid passphrases ask for the file only, and the chosen file gets the export, the date and Saved`() = runTest(main) {
         openVault(github, mail)
         val vm = viewModel()
         val pass = "correct horse".toCharArray()
         val repeat = "correct horse".toCharArray()
-        vm.create(pass, repeat, fakeUri())
+        vm.prepare(pass, repeat)
+        drain()
+        assertEquals(BackupState.ChooseFile, vm.state.value)
+        assertEquals(0, exports, "exported before a file was chosen")
+        assertTrue(repeat.isZeroed(), "the repeat is not needed after the check")
+        vm.fileChosen(uri)
         runCurrent()
         // the main dispatcher has done all it can: the export waits for io
         assertEquals(BackupState.Working, vm.state.value)
@@ -167,46 +205,134 @@ class BackupViewModelTest {
         assertContentEquals(github.secret, back[0].secret)
         assertContentEquals(mail.secret, back[1].secret)
         assertEquals(now, prefs.lastBackupAt)
-        assertTrue(pass.isZeroed() && repeat.isZeroed(), "the passphrase arrays were not zeroed")
+        assertTrue(files.deleted.isEmpty())
+        assertTrue(pass.isZeroed(), "the passphrase array was not zeroed")
     }
 
-    @Test fun `create while locked unlocks first, and a cancelled prompt ends Idle with no file`() = runTest(main) {
+    @Test fun `while locked the prompt comes before the picker, and a cancelled prompt opens no picker`() = runTest(main) {
         gateway.stored = emptyList()
         gateway.unlockFailures += VaultAuthRequiredException()
         val vm = viewModel()
         val pass = "correct horse".toCharArray()
-        vm.create(pass, "correct horse".toCharArray(), fakeUri())
+        vm.prepare(pass, "correct horse".toCharArray())
         drain()
         assertEquals(listOf("unlock"), gateway.calls)
-        assertEquals(BackupState.Idle, vm.state.value)
+        assertEquals(BackupState.Idle, vm.state.value, "a cancelled prompt must not ask for a file")
         assertNull(files.written)
         assertNull(prefs.lastBackupAt)
         assertEquals(0, exports)
         assertTrue(pass.isZeroed())
     }
 
-    @Test fun `create while locked unlocks and then saves`() = runTest(main) {
+    @Test fun `while locked the prompt opens the vault and then the picker is asked for`() = runTest(main) {
         gateway.stored = emptyList()
         val vm = viewModel()
-        vm.create("correct horse".toCharArray(), "correct horse".toCharArray(), fakeUri())
+        vm.prepare("correct horse".toCharArray(), "correct horse".toCharArray())
         drain()
-        assertEquals("unlock", gateway.calls.first())
+        assertEquals(listOf("unlock"), gateway.calls)
+        assertEquals(BackupState.ChooseFile, vm.state.value)
+        vm.fileChosen(uri)
+        drain()
         assertEquals(BackupState.Saved, vm.state.value)
         assertNotNull(files.written)
     }
 
-    @Test fun `a write failure gives the file message and records no date`() = runTest(main) {
+    @Test fun `a second tap while the picker is open is ignored and its passphrase zeroed`() = runTest(main) {
         openVault(github)
-        val failing = object : BackupFiles {
-            override suspend fun read(uri: Uri, maxBytes: Int): ByteArray = error("unused")
-
-            override suspend fun write(uri: Uri, bytes: ByteArray) = throw IOException("disk full")
-        }
-        val vm = BackupViewModel(gateway, failing, prefs, { now }, io)
-        vm.create("correct horse".toCharArray(), "correct horse".toCharArray(), fakeUri())
+        val vm = viewModel()
+        vm.prepare("correct horse".toCharArray(), "correct horse".toCharArray())
         drain()
+        val second = "another horse".toCharArray()
+        vm.prepare(second, "another horse".toCharArray())
+        drain()
+        assertEquals(BackupState.ChooseFile, vm.state.value)
+        assertTrue(second.isZeroed())
+        vm.fileChosen(uri)
+        drain()
+        // the first passphrase is the one used
+        VaultBackup.import(assertNotNull(files.written), "correct horse".toCharArray())
+    }
+
+    @Test fun `a cancelled picker ends Idle and zeroes the passphrase`() = runTest(main) {
+        openVault(github)
+        val vm = viewModel()
+        val pass = "correct horse".toCharArray()
+        vm.prepare(pass, "correct horse".toCharArray())
+        drain()
+        vm.fileChosen(null)
+        drain()
+        assertEquals(BackupState.Idle, vm.state.value)
+        assertTrue(pass.isZeroed())
+        assertEquals(0, exports)
+    }
+
+    @Test fun `a file that arrives with no passphrase held is deleted and asks for the passphrase again`() = runTest(main) {
+        openVault(github)
+        // a new view model: the process was recreated while the picker was open
+        val vm = viewModel()
+        vm.fileChosen(uri)
+        drain()
+        assertEquals(BackupState.Failed(R.string.backup_error_again), vm.state.value)
+        assertDeletedOnce()
+        assertNull(files.written)
+        assertEquals(0, exports)
+    }
+
+    @Test fun `a write failure deletes the file, gives the file message and records no date`() = runTest(main) {
+        openVault(github)
+        files.failWrite = IOException("disk full")
+        val vm = viewModel()
+        create(vm, "correct horse".toCharArray(), "correct horse".toCharArray())
         assertEquals(BackupState.Failed(R.string.backup_error_file), vm.state.value)
+        assertDeletedOnce()
         assertNull(prefs.lastBackupAt)
+    }
+
+    @Test fun `an export failure deletes the file`() = runTest(main) {
+        openVault(github)
+        val vm = BackupViewModel(gateway, files, prefs, { now }, io, exporter = { _, _ -> throw BackupFormatException(VaultBackup.KDF_OUT_OF_MEMORY) })
+        create(vm, "correct horse".toCharArray(), "correct horse".toCharArray())
+        assertEquals(BackupState.Failed(R.string.backup_error_memory), vm.state.value)
+        assertDeletedOnce()
+        assertNull(files.written)
+    }
+
+    @Test fun `a vault locked while the picker was open and a cancelled prompt delete the file and end Idle`() = runTest(main) {
+        openVault(github)
+        val vm = viewModel()
+        val pass = "correct horse".toCharArray()
+        vm.prepare(pass, "correct horse".toCharArray())
+        drain()
+        gateway.lock()
+        gateway.unlockFailures += VaultAuthRequiredException()
+        vm.fileChosen(uri)
+        drain()
+        assertEquals(BackupState.Idle, vm.state.value)
+        assertDeletedOnce()
+        assertNull(files.written)
+        assertTrue(pass.isZeroed())
+    }
+
+    @Test fun `a delete that fails is swallowed and the write failure still shows`() = runTest(main) {
+        openVault(github)
+        files.failWrite = IOException("disk full")
+        files.failDelete = IOException("gone")
+        val vm = viewModel()
+        create(vm, "correct horse".toCharArray(), "correct horse".toCharArray())
+        assertEquals(BackupState.Failed(R.string.backup_error_file), vm.state.value)
+        assertDeletedOnce()
+    }
+
+    @Test fun `leaving the screen while the picker is open zeroes the held passphrase`() = runTest(main) {
+        openVault(github)
+        val store = ViewModelStore()
+        val vm = ViewModelProvider.create(store, viewModelFactory { initializer { viewModel() } })[BackupViewModel::class]
+        val pass = "correct horse".toCharArray()
+        vm.prepare(pass, "correct horse".toCharArray())
+        drain()
+        assertFalse(pass.isZeroed())
+        store.clear()
+        assertTrue(pass.isZeroed())
     }
 
     @Test fun `restore of a valid file imports and reports added and skipped`() = runTest(main) {

@@ -18,6 +18,7 @@ import java.time.ZoneOffset
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +36,9 @@ sealed interface BackupState {
 
     /** The key derivation or the file is in progress. */
     data object Working : BackupState
+
+    /** The vault is open and the passphrase held: the save picker should open. */
+    data object ChooseFile : BackupState
 
     data object Saved : BackupState
 
@@ -60,7 +64,7 @@ fun backupMessage(t: Throwable): Int =
 
 /**
  * Create and restore for the Backup screen. Both make sure the vault is open first (a cancelled prompt ends [Idle]
- * with nothing written or read), run the key derivation on [io] (it takes seconds and about 68 MiB), and zero the
+ * with nothing written or read; for a create this happens before the save picker, which creates the file), run the key derivation on [io] (it takes seconds and about 68 MiB), and zero the
  * passphrase arrays they were given when they are done. Restore imports into the open vault: accounts already in it
  * are skipped. The last-backup time goes to [prefs], never into the vault.
  */
@@ -76,12 +80,22 @@ class BackupViewModel(
     private val _state = MutableStateFlow<BackupState>(BackupState.Idle)
     val state: StateFlow<BackupState> = _state.asStateFlow()
 
-    fun create(passphrase: CharArray, repeat: CharArray, target: Uri) {
+    /** The checked passphrase while the save picker is open; zeroed when it is used, dropped or the screen is left. */
+    private var pending: CharArray? = null
+
+    /**
+     * Step one of a create: checks the passphrases, makes sure the vault is open (a cancelled prompt ends [Idle]),
+     * then holds the passphrase and moves to [BackupState.ChooseFile] so the screen opens the save picker. The picker
+     * creates the file, so nothing may stop the backup between the picker and [fileChosen]. A tap while a create is
+     * under way is ignored.
+     */
+    fun prepare(passphrase: CharArray, repeat: CharArray) {
         val problem = passphraseProblem(passphrase, repeat)
         repeat.fill(Char(0))
-        if (problem != null || _state.value == BackupState.Working) {
+        val busy = _state.value == BackupState.Working || _state.value == BackupState.ChooseFile
+        if (problem != null || busy) {
             passphrase.fill(Char(0))
-            if (problem != null) {
+            if (problem != null && !busy) {
                 _state.value = BackupState.Failed(
                     when (problem) {
                         PassphraseProblem.TooShort -> R.string.backup_error_short
@@ -92,8 +106,53 @@ class BackupViewModel(
             return
         }
         _state.value = BackupState.Working
-        work(passphrase) {
-            if (!ensureOpen()) return@work BackupState.Idle
+        viewModelScope.launch {
+            val open = try {
+                ensureOpen()
+            } catch (e: CancellationException) {
+                passphrase.fill(Char(0))
+                throw e
+            } catch (e: Exception) {
+                passphrase.fill(Char(0))
+                val message = backupMessage(e)
+                _state.value = if (message == NO_MESSAGE) BackupState.Idle else BackupState.Failed(message)
+                return@launch
+            }
+            if (!open) {
+                passphrase.fill(Char(0))
+                _state.value = BackupState.Idle
+                return@launch
+            }
+            dropPending()
+            pending = passphrase
+            _state.value = BackupState.ChooseFile
+        }
+    }
+
+    /**
+     * Step two: the save picker returned. Null (cancelled) ends [Idle]. A file that arrives with no passphrase held
+     * (the app was recreated while the picker was open) is deleted and the screen asks for the passphrase again. A
+     * failed or cancelled backup deletes the file the picker created, so no empty or partial backup is left behind.
+     */
+    fun fileChosen(target: Uri?) {
+        val passphrase = pending
+        pending = null
+        if (target == null) {
+            passphrase?.fill(Char(0))
+            if (_state.value == BackupState.ChooseFile) _state.value = BackupState.Idle
+            return
+        }
+        if (passphrase == null) {
+            _state.value = BackupState.Failed(R.string.backup_error_again)
+            viewModelScope.launch { deleteQuietly(target) }
+            return
+        }
+        _state.value = BackupState.Working
+        work(passphrase, onFailure = { deleteQuietly(target) }) {
+            if (!ensureOpen()) {
+                deleteQuietly(target)
+                return@work BackupState.Idle
+            }
             val accounts = gateway.accounts()
             val bytes = try {
                 withContext(io) { exporter(accounts, passphrase) }
@@ -104,6 +163,25 @@ class BackupViewModel(
             prefs.lastBackupAt = clock()
             BackupState.Saved
         }
+    }
+
+    private suspend fun deleteQuietly(target: Uri) {
+        try {
+            files.delete(target)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // best effort: the message about the backup matters more than a leftover file
+        }
+    }
+
+    private fun dropPending() {
+        pending?.fill(Char(0))
+        pending = null
+    }
+
+    override fun onCleared() {
+        dropPending()
     }
 
     fun restore(source: Uri, passphrase: CharArray) {
@@ -131,14 +209,19 @@ class BackupViewModel(
         }
     }
 
-    /** Runs [block] and sets its state; a failure becomes its message, a cancelled prompt [BackupState.Idle]. */
-    private fun work(passphrase: CharArray, block: suspend () -> BackupState) {
+    /**
+     * Runs [block] and sets its state; a failure becomes its message, a cancelled prompt [BackupState.Idle]. [onFailure]
+     * runs on any failure, cancellation included.
+     */
+    private fun work(passphrase: CharArray, onFailure: suspend () -> Unit = {}, block: suspend () -> BackupState) {
         viewModelScope.launch {
             _state.value = try {
                 block()
             } catch (e: CancellationException) {
+                withContext(NonCancellable) { onFailure() }
                 throw e
             } catch (e: Exception) {
+                onFailure()
                 val message = backupMessage(e)
                 if (message == NO_MESSAGE) BackupState.Idle else BackupState.Failed(message)
             } finally {

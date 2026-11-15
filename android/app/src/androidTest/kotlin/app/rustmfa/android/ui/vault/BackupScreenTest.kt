@@ -91,6 +91,17 @@ class BackupScreenTest {
         assertEquals(listOf("create:short but now long:short but now long"), calls)
     }
 
+    @Test fun createIsOffWhileTheSavePickerIsOpen() {
+        show()
+        field("Passphrase").performTextInput("correct horse")
+        field("Repeat passphrase").performTextInput("correct horse")
+        val create = rule.onNodeWithText("Save backup file")
+        create.performScrollTo().assertIsEnabled()
+        state = BackupState.ChooseFile
+        // a second tap must not open a second picker
+        create.performScrollTo().assertIsNotEnabled()
+    }
+
     @Test fun aShortPassphraseSaysSo() {
         show()
         field("Passphrase").performTextInput("abcdefg")

@@ -17,6 +17,9 @@ interface BackupFiles {
 
     /** Writes [bytes] as the whole file and flushes; an `IOException` when it cannot. */
     suspend fun write(uri: Uri, bytes: ByteArray)
+
+    /** Deletes the file (a backup that could not be written); best effort, the caller ignores a failure. */
+    suspend fun delete(uri: Uri)
 }
 
 /** Reads [input] to the end, but stops with [FILE_TOO_LARGE] as soon as more than [maxBytes] came in. */

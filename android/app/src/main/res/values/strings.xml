@@ -183,6 +183,7 @@
     <string name="backup_error_decrypt">Wrong passphrase or damaged file.</string>
     <string name="backup_error_memory">Not enough memory for the backup. Close other apps and try again.</string>
     <string name="backup_error_file">Could not read or write the file.</string>
+    <string name="backup_error_again">The backup was not saved. Enter the passphrase again and save once more.</string>
     <string name="vault_new_failed">The vault could not be deleted. Try again.</string>
     <string name="restore_text">Choose the backup file and enter its passphrase. The unreadable vault is replaced only after you confirm.</string>
     <string name="restore_working">Working on the restore</string>

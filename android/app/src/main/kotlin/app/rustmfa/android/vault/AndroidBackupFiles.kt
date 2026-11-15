@@ -2,8 +2,10 @@ package app.rustmfa.android.vault
 
 import android.content.ContentResolver
 import android.net.Uri
+import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import app.rustmfa.vault.BackupFormatException
+import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +41,21 @@ class AndroidBackupFiles(
                 }
             }
         }
+
+    /** Best effort: a picker document goes through its provider, a `file:` URI is deleted directly; errors are swallowed. */
+    override suspend fun delete(uri: Uri) {
+        withContext(io) {
+            try {
+                if (uri.scheme == ContentResolver.SCHEME_FILE) {
+                    uri.path?.let { File(it).delete() }
+                } else {
+                    DocumentsContract.deleteDocument(resolver, uri)
+                }
+            } catch (e: Exception) {
+                // a leftover file is the lesser problem; the caller shows the real failure
+            }
+        }
+    }
 
     /** The provider's size, or the file descriptor's; null when neither knows. */
     private fun declaredSize(uri: Uri): Long? {

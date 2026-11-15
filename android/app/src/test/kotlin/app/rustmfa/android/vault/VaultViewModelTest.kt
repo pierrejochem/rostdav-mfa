@@ -92,6 +92,8 @@ class VaultViewModelTest {
         override suspend fun read(uri: Uri, maxBytes: Int): ByteArray = error("unused")
 
         override suspend fun write(uri: Uri, bytes: ByteArray) = error("unused")
+
+        override suspend fun delete(uri: Uri) = error("unused")
     }
 
     /** Ends the view model's ticker when a test is over, so runTest does not chase it through virtual time. */
@@ -578,6 +580,8 @@ class VaultViewModelTest {
         }
 
         override suspend fun write(uri: Uri, bytes: ByteArray) = error("unused")
+
+        override suspend fun delete(uri: Uri) = error("unused")
     }
 
     @Test
