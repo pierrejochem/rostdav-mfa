@@ -2,6 +2,18 @@
 
 Native Android app for RustMFA push approval (spec phases 2 to 4). The app talks to a Rostdav server over the contract in `../contract`.
 
+## Screenshots
+
+Taken on the emulator against a real Rostdav (light first, then dark). The Approve screen blocks screen capture (`FLAG_SECURE`), so its pictures are rendered by `ScreenshotsTest` instead of captured from the window.
+
+| | | |
+| --- | --- | --- |
+| ![Connect to your server](../media/01-onboarding-light.png) | ![Enter by hand](../media/02-manual-entry-light.png) | ![Name this phone](../media/03-name-phone-light.png) |
+| ![Overview, no requests](../media/04-overview-empty-light.png) | ![Overview with a request](../media/05-overview-request-light.png) | ![Notification](../media/06-notification-light.png) |
+| ![Approve](../media/12-approve-light.png) | ![Approved](../media/14-approved-light.png) | ![Devices](../media/07-devices-light.png) |
+| ![Settings](../media/08-settings-light.png) | ![Approve, dark](../media/13-approve-dark.png) | ![Devices, dark](../media/10-devices-dark.png) |
+| ![Overview, dark](../media/09-overview-dark.png) | ![Settings, dark](../media/11-settings-dark.png) | |
+
 ## Modules
 
 - `:contract` is a plain JVM module with the byte-exact logic (canonical strings, request signing, signature encoding). Its tests read the shared vectors `../contract/vectors/v1.json`, the same file the Rust tests use.
