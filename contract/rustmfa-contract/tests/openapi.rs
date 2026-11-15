@@ -145,3 +145,26 @@ fn json_mirror_matches_the_yaml() {
     .unwrap();
     assert_eq!(json, yaml, "rustmfa-v1.json is out of date");
 }
+
+/// A phone without a push service (polling only) registers with the channel `none` and an empty
+/// token; for `fcm` and `unifiedpush` the token is required.
+#[test]
+fn polling_only_phones_use_the_none_channel() {
+    let d = doc();
+    let channels: Vec<&str> = d["components"]["schemas"]["PushChannel"]["enum"]
+        .as_sequence()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_str().unwrap())
+        .collect();
+    assert_eq!(channels, ["fcm", "unifiedpush", "none"]);
+    for schema in ["RegisterRequest", "PushTokenRequest"] {
+        let desc = d["components"]["schemas"][schema]["properties"]["push_token"]["description"]
+            .as_str()
+            .unwrap_or_else(|| panic!("{schema}.push_token has no description"));
+        assert!(
+            desc.contains("empty") && desc.contains("none"),
+            "{schema}: {desc}"
+        );
+    }
+}

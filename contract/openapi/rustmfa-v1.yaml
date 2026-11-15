@@ -330,16 +330,21 @@ components:
           description: Base64 DER certificates, leaf first, for the approval key
           items: { type: string }
         push_channel: { $ref: "#/components/schemas/PushChannel" }
-        push_token: { type: string }
+        push_token:
+          type: string
+          description: Push service token. Must be empty for the channel `none`, and a non-empty value without control characters for `fcm` and `unifiedpush`.
     PushChannel:
       type: string
-      enum: [fcm, unifiedpush]
+      description: "`none` is a phone without a push service: it is woken by polling only, and its push token is empty."
+      enum: [fcm, unifiedpush, none]
     PushTokenRequest:
       type: object
       required: [push_channel, push_token]
       properties:
         push_channel: { $ref: "#/components/schemas/PushChannel" }
-        push_token: { type: string }
+        push_token:
+          type: string
+          description: Push service token. Must be empty for the channel `none`, and a non-empty value without control characters for `fcm` and `unifiedpush`.
     RotateKeyRequest:
       type: object
       required: [request_public_key, approval_public_key, attestation_chain]
