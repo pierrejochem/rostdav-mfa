@@ -62,6 +62,20 @@ The audit list in the app showed the run (newest first): request created, approv
 
 The first version of the change held the restart but left the poller running. On its next poll it signed a request with the deleted key and the app crashed (`IllegalStateException: no key rustmfa.request`). The hold now cancels the session job and the Approve screen shows the removed-phone result at once.
 
+### Run with the new design
+
+Date: 2026-11-15. Same emulator (`nc-test`, API 35) and a fresh Rostdav 0.10.1 test server built from the Rostdav `feat/push-mfa` branch; the `nopush` debug build.
+
+| Step | Result |
+| --- | --- |
+| Enroll by hand (address and token), light and dark | Passed. The phone shows on the Overview. |
+| Request found by polling, shown on Overview and Requests with a count badge on the floating bar | Passed. |
+| Approve: the browser showed 20, the app offered 36, 85 and 20, pick 20, emulator fingerprint | Passed. The app said "Approved" and the server reported `approved`. The last step, the browser page finishing the login, was not driven (the scripted client could not post the finish form); the earlier run in this document did drive it. |
+| Settings, Devices, Requests tabs; dark and light | Passed. Screenshots in `media/`. |
+| Font size 200% and German (`cmd locale set-app-locales`, `settings put system font_scale 2.0`) | Found two problems: the bar labels were clipped and a long server address squeezed the row title to one letter. Both fixed with tests; screens scroll, nothing else clips. |
+| Dark mode text | Found that headings used black on the dark background (no default text colour outside a Surface). Fixed with a test. |
+| API 28 and 29 (solid glass) | Not run: no API 28 system image is installed. Covered by the unit test of `glassStyle`. |
+
 ### Not covered by the emulator
 
 A hostile QR code on a real camera, notification taps, and everything in the next section.
