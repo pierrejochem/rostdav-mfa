@@ -1,6 +1,6 @@
 # Vault core
 
-The vault keeps the user's own TOTP and HOTP accounts (the seeds of other services) on the phone. This document covers the core only: the storage, the crypto and the session. There is no screen yet (sub-project 3).
+The vault keeps the user's own TOTP and HOTP accounts (the seeds of other services) on the phone. This document covers the core (the storage, the crypto and the session) and, at the end, the screens built on it.
 
 ## Module layout
 
@@ -72,7 +72,7 @@ A UTF-8 JSON object:
 
 Unit tests cover the JVM module (including the RFC vectors, the zeroing, the lock races and the backup limits) and the Android parts that need no prompt. Instrumented tests on the emulator cover the Keystore wrapper.
 
-Manual unlock check (emulator-5554, API 35, device PIN set): a throwaway instrumented test started `MainActivity`, called `BiometricUnlocker.authenticate()` and the PIN was typed with `input text`. Creating the key before authentication raised `VaultAuthRequiredException`. After the prompt succeeded, `KeystoreKeyWrapper.create` and `unwrap` worked at once (32 bytes back), and `unwrap` 15 seconds after the start of the window raised `VaultAuthRequiredException`. That test was deleted. It ran on the unlocker and the wrapper, not on the `AppContainer` wiring (no screen exists yet).
+Manual unlock check (emulator-5554, API 35, device PIN set): a throwaway instrumented test started `MainActivity`, called `BiometricUnlocker.authenticate()` and the PIN was typed with `input text`. Creating the key before authentication raised `VaultAuthRequiredException`. After the prompt succeeded, `KeystoreKeyWrapper.create` and `unwrap` worked at once (32 bytes back), and `unwrap` 15 seconds after the start of the window raised `VaultAuthRequiredException`. That test was deleted. It ran on the unlocker and the wrapper, not on the `AppContainer` wiring; the screens and their by-hand checks are in "The screens" below.
 
 Not verified: API 28 and 29 (the `setUserAuthenticationValidityDurationSeconds` and `setDeviceCredentialAllowed` branches), a real fingerprint sensor, StrongBox hardware, and a physical phone. The emulator has no StrongBox, so the fallback to the normal Keystore is what ran.
 
@@ -80,13 +80,36 @@ Not verified: API 28 and 29 (the `setUserAuthenticationValidityDurationSeconds` 
 
 `./gradlew :app:assembleNopushRelease` builds with R8 and reports no missing class for Bouncy Castle, so `app/proguard-rules.pro` needs no rule for it. The unsigned APK is 5,652,525 bytes. The same build with `bcprov` removed and `VaultKdf` stubbed out is 5,635,903 bytes, so Bouncy Castle adds about 16 KiB after shrinking (R8 keeps only the Argon2 classes the code reaches). The release build was made on 2026-11-15 with the signing config absent (the output is `app-nopush-release-unsigned.apk`); the shrunken APK was not run on a device.
 
-## For the vault UI (sub-project 3)
+## The screens
 
-These are obligations the reviews found for the code that will call the vault core.
+The vault UI lives in `app.rustmfa.android.ui.vault` (the composables) and `app.rustmfa.android.vault` (`VaultViewModel`, `BackupViewModel`, `RestoreFlow`, the clipboard, the prefs and the file access). The design is in `docs/superpowers/specs/2026-11-15-vault-ui-design.md`.
 
-- Call `BiometricUnlocker` on the main thread (`BiometricPrompt` requires it).
-- `AppContainer.authenticator` captures the Activity through `BiometricUnlocker`. Clear it (set it back to the throwing default) when the Activity goes away, or it leaks the Activity.
-- `VaultRepository` serialises `unlock()` and `reset()`, so overlapping unlocks (double tap, rotation) show one prompt. `reset()` therefore waits while an unlock prompt is showing: dismiss the prompt (or let it finish) before offering reset, and do not call `VaultSession.open()` or `reset()` directly, which bypasses that order.
-- Call `appLeft()` when the app goes to the background and `appReturned()` when it comes back, from the lifecycle. Without them the vault never auto-locks.
-- Nudge users to make a backup. Removing the lock screen destroys the vault, and a backup is the only way back.
-- Handle `VaultKeyLostException` and `VaultCorruptException`: `unlock()` fails with them on every attempt while the old blob stays, so the only way out is `VaultRepository.reset()`. Offer a restore from a backup or an empty new vault (confirm first, since reset deletes what is left). Both work the same way: call `reset()`, then `unlock()` (the user authenticates again; this creates the new key and an empty vault), then for a restore `VaultSession.import(VaultBackup.import(bytes, passphrase))`. Decrypt the backup before calling `reset()`, so a wrong passphrase does not cost the user the old state. Treat `VaultAuthRequiredException` as "the user cancelled or failed", not as an error to report.
+- **Accounts section on the Overview.** One card per state: no vault yet ("Add your first account"), locked ("Unlock"), empty, the account list, and "The vault cannot be opened". A TOTP row shows the code in two groups and a countdown ring (danger colour in the last 5 seconds); a HOTP row shows "Tap to generate" and then the code with a refresh button. One ticker updates the codes every second while the Overview is in the foreground and the vault is open. "Lock now" locks at once.
+- **Copy.** A tap copies the code as a sensitive clip (hidden from the clipboard preview on Android 13 and newer). The app clears the clip after 30 seconds if it is still its own. From the background, Android 10 and newer do not let the app read the clipboard, so the clip may stay; this is best effort.
+- **Long-press sheet.** Copy, Edit (service and account name only; the secret and settings of a saved account cannot be changed) and Delete (asks first). If the vault locked meanwhile, saving asks for the fingerprint or PIN once more; a cancelled prompt shows "Unlock to save".
+- **Add account.** The `+` unlocks first (the first unlock creates the vault). Three choices: Scan QR code (an `otpauth://` URI, then the Check the account screen with the names, the settings and the first code), Enter by hand (secret as dots with a show toggle, TOTP or HOTP, Advanced for algorithm, digits, period or counter), and Import a backup. An account that is already there is skipped with "This account is already in the vault".
+- **Backup.** From the Settings row "Backup" (subtitle "Last backup: date" or "No backup yet") or the "No backup yet" banner on the Overview (Later hides it for 7 days). The screen first says that removing the screen lock deletes the vault. Create: a passphrase twice (at least 8 characters), then the system file picker; the key derivation runs off the main thread behind a progress indicator. Restore: pick a file, type its passphrase; the accounts are added and existing ones skipped ("Added 2, skipped 0").
+- **The vault cannot be opened.** On `VaultKeyLostException` or `VaultCorruptException` the card offers "Restore from a backup" and "Start a new vault". Restore decrypts the file first, asks "This replaces the unreadable vault", then resets and unlocks; if that unlock is cancelled, the screen offers "Finish restoring". Start a new vault asks first and then resets.
+- **Screen capture.** `FLAG_SECURE` is set while the vault is unlocked (on the whole window) and on the scan, by-hand, Check the account, backup and restore screens whatever the state. Holders are counted per window (`SecureWhile`), so the Approve screen and the vault do not clear each other's flag.
+- **Auto-lock.** `MainActivity` calls `appLeft()` in `onStop` and `appReturned()` in `onStart`; 60 seconds away locks the vault, a rotation does not.
+
+Not built (non-goals of this version): search, sorting or folders, service logos (the letter tile stays), editing the secret or settings of a saved account, import formats of other authenticator apps, tablet layouts and widgets.
+
+### Obligations from the core reviews
+
+All six obligations the core reviews listed for the UI are met:
+
+- `BiometricUnlocker` runs on the main thread: `MainActivity`'s authenticator switches to `Dispatchers.Main`.
+- The authenticator is set in `onStart` and set back to `AppContainer.NO_AUTHENTICATOR` in `onStop` (only if it is still this activity's, so a restarted activity keeps its own). The Activity does not leak.
+- All unlocks and resets go through `VaultRepository` (via `VaultViewModel`), never `VaultSession.open()` or `reset()` directly. Reset is offered only from the "cannot be opened" card, after the failed unlock's prompt has finished.
+- `appLeft()` and `appReturned()` are called from the lifecycle (tested by `MainActivityLifecycleTest`).
+- Users are nudged to make a backup: the Overview banner, the Settings subtitle and the note on the Backup screen.
+- `VaultKeyLostException` and `VaultCorruptException` lead to the restore or new-vault flow, both confirmed first; the backup is decrypted before `reset()`, so a wrong passphrase costs nothing. `VaultAuthRequiredException` is treated as a cancelled prompt and not reported as an error.
+
+Remaining, known and accepted for now (from the task reviews): cancelling the unlock or a failed write after the save picker can leave an empty or partial backup file; `VaultLockedException` from an unlock is shown as the generic error; the clipboard clear in the background as above. The release build with the screens has not been run on a device.
+
+### Checks done for the screens
+
+Instrumented tests (emulator-5554, API 35) cover the Accounts section, the sheet and dialogs, the add flow, the Backup and Restore screens, the `FLAG_SECURE` holders and the lifecycle; the JVM tests cover the view models, the form validation and the restore flow. By hand on the same emulator, against a test Rostdav: an account added by hand showed codes equal to an independent RFC 6238 calculation; a duplicate was refused; screencap was black while the vault was unlocked; a backup was saved to Downloads, the app data was cleared, and the backup was restored into a new vault (a wrong passphrase was refused first); after clearing and setting the screen lock again, the vault could not be opened, and "Restore from a backup" (with a cancelled prompt and "Finish restoring" on the way) brought the accounts back. The details are in `docs/e2e.md`.
+
+Not verified: scanning a real QR code with the camera (the parsing is unit-tested), "Start a new vault" by hand (covered by JVM and dialog tests), API 28 and 29, StrongBox, a real fingerprint sensor, and a physical phone.

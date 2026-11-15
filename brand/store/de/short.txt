@@ -1,1 +1,1 @@
-Rostdav-Anmeldungen am Telefon mit Fingerabdruck freigeben. Selbst gehostet.
+Rostdav-Anmeldungen per Fingerabdruck freigeben. Einmalcodes aufbewahren.

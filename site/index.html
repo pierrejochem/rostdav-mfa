@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>rostdav-mfa: approve Rostdav sign-ins with your fingerprint</title>
-<meta name="description" content="rostdav-mfa is a self-hosted authenticator for your own Rostdav server: approve a sign-in with a tap and your fingerprint.">
+<title>rostdav-mfa: approve Rostdav sign-ins and keep your one-time codes</title>
+<meta name="description" content="rostdav-mfa is a self-hosted authenticator for your own Rostdav server: approve a sign-in with a tap and your fingerprint, and keep the one-time codes of your other accounts encrypted on the phone.">
 <link rel="alternate" hreflang="de" href="index.de.html">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="tokens.css">
@@ -19,12 +19,12 @@
 <main>
 <div class="hero">
 <div>
-<div class="eyebrow">Push approval for Rostdav</div>
+<div class="eyebrow">Push approval and one-time codes</div>
 <h1>Your security. Your control.</h1>
-<p class="lead">rostdav-mfa approves sign-ins to your own Rostdav server with a tap and your fingerprint. No account, no cloud, no third party.</p>
+<p class="lead">rostdav-mfa approves sign-ins to your own Rostdav server with a tap and your fingerprint. It also keeps the one-time codes of your other accounts, encrypted on the phone. No account, no cloud, no third party.</p>
 <div class="cta"><a class="btn" href="#how">See how it works</a><a class="btn o" href="https://github.com/pierrejochem/rostdav-mfa">Source on GitHub</a></div>
 </div>
-<img src="assets/hero.png" alt="Three phone screens: the overview with a waiting request, the approve screen with three numbers, and the settings." width="1600" height="800">
+<img src="assets/hero.png" alt="Three phone screens: the settings, the approve screen with three numbers, and the overview with a waiting request and one-time codes." width="1600" height="800">
 </div>
 <section aria-labelledby="f">
 <h2 id="f">What it does</h2>
@@ -32,6 +32,8 @@
 <div class="card"><h3>Number matching</h3><p>The browser shows one number. Your phone shows three. You pick the right one, so a request you did not start cannot be approved by accident.</p></div>
 <div class="card"><h3>Signed with your fingerprint</h3><p>The approval key lives in the phone's hardware-backed keystore. It is used only after your fingerprint or face, and it never leaves the phone.</p></div>
 <div class="card"><h3>Runs on your own Rostdav</h3><p>The app talks only to your server. The default build needs no Google service; it checks in for new requests while the app is open.</p></div>
+<div class="card"><h3>Authenticator codes</h3><p>Keep the time-based (TOTP) and counter-based (HOTP) codes of your other accounts on the phone. Add an account by scanning its QR code or by typing the secret key. Tap a code to copy it.</p></div>
+<div class="card"><h3>Backup and restore</h3><p>Save your accounts to a file encrypted with a passphrase, and restore them on this or another phone. The app reminds you while there is no backup.</p></div>
 </div>
 </section>
 <section id="how" aria-labelledby="hw">
@@ -41,27 +43,33 @@
 <li><h3>Match</h3><p>Your phone shows the service, the device and the rough place. You pick the number the browser shows.</p></li>
 <li><h3>Confirm</h3><p>You confirm with your fingerprint or face. The browser signs in. Pick wrong, or tap Deny, and the sign-in is refused.</p></li>
 </ol>
+<h3>One-time codes</h3>
+<ol class="steps">
+<li><h3>Unlock</h3><p>The Accounts section on the Overview opens with your fingerprint, face or the phone's PIN. It locks again when you tap Lock now or after the app was away for 60 seconds.</p></li>
+<li><h3>Add</h3><p>Scan the QR code a service shows when you switch on two-step sign-in, check the names and the first code, and add it. Or type the secret key by hand.</p></li>
+<li><h3>Use</h3><p>A time-based account shows its current code and the seconds left; a counter-based one makes a code when you tap it. Tap to copy, long-press to copy, rename or delete.</p></li>
+</ol>
 </section>
 <section aria-labelledby="sc">
 <h2 id="sc">The app</h2>
 <div class="shots">
-<img src="assets/05-overview-request-dark.png" alt="Overview with one waiting sign-in request" width="1080" height="2400" loading="lazy">
+<img src="assets/05-overview-request-dark.png" alt="Overview with one waiting sign-in request and three accounts with their codes" width="1080" height="2400" loading="lazy">
 <img src="assets/09-approve-dark.png" alt="Approve screen with three numbers to pick from" width="1080" height="2400" loading="lazy">
-<img src="assets/06-requests-dark.png" alt="The list of sign-in requests" width="1080" height="2400" loading="lazy">
-<img src="assets/07-settings-dark.png" alt="Settings with the connected server" width="1080" height="2400" loading="lazy">
+<img src="assets/11-accounts-dark.png" alt="The Accounts section with live codes and the reminder that there is no backup yet" width="1080" height="2400" loading="lazy">
+<img src="assets/13-backup-dark.png" alt="The Backup screen: create a backup with a passphrase, or restore one" width="1080" height="2400" loading="lazy">
 </div>
 </section>
 <section id="security" aria-labelledby="sm">
 <h2 id="sm">Security model</h2>
 <ul class="facts">
-<li><strong>Hardware-backed key.</strong> The approval key is created in the Android keystore and is used only after biometrics.</li><li><strong>Everything is signed.</strong> Requests and answers carry signatures; the server checks signature, number and time.</li><li><strong>No tracking.</strong> The app has no account, no analytics, and talks only to your Rostdav server.</li><li><strong>Screenshots blocked.</strong> The approve screen blocks screen capture and the recents preview.</li><li><strong>Lost phone.</strong> Remove it in your Rostdav account; it can never approve a sign-in again.</li>
+<li><strong>Hardware-backed key.</strong> The approval key is created in the Android keystore and is used only after biometrics.</li><li><strong>Everything is signed.</strong> Requests and answers carry signatures; the server checks signature, number and time.</li><li><strong>No tracking.</strong> The app has no account, no analytics, and talks only to your Rostdav server.</li><li><strong>Codes encrypted on the phone.</strong> The accounts are encrypted with AES-256-GCM under a key in the Android keystore that opens only after your fingerprint, face or PIN. They are left out of Android backups.</li><li><strong>Screenshots blocked.</strong> The approve screen, the unlocked vault and the add and backup screens block screen capture and the recents preview.</li><li><strong>Screen lock matters.</strong> Removing the phone's screen lock makes Android delete the vault key, and the codes are lost. A backup is the way back.</li><li><strong>Lost phone.</strong> Remove it in your Rostdav account; it can never approve a sign-in again.</li>
 </ul>
 </section>
 <section id="status" aria-labelledby="st">
 <h2 id="st">Status</h2>
 <div class="grid">
-<div class="card"><h3>Working today</h3><p>Enrollment by QR code or by hand, number matching, biometric approval, the list of your phones and recent events, removing a phone, dark and light themes, English and German. Tested on an emulator against a real Rostdav.</p></div>
-<div class="note"><h3>Planned: authenticator vault</h3><p>One-time codes for other services, stored encrypted on the phone. Planned, not built. There is no store release yet; you build the app from source.</p></div>
+<div class="card"><h3>Working today</h3><p>Enrollment by QR code or by hand, number matching, biometric approval, the list of your phones and recent events, removing a phone. The authenticator vault: TOTP and HOTP codes, add by scan or by hand, rename and delete, encrypted backup and restore, recovery when the vault cannot be opened. Dark and light themes, English and German. Tested on an Android 15 emulator against a real Rostdav.</p></div>
+<div class="note"><h3>Not there yet</h3><p>No search, sorting or folders for accounts, no service logos, no import from other authenticator apps (only QR codes and its own backups). Not tested on a physical phone, on Android 9 or 10, or with StrongBox. There is no store release yet; you build the app from source.</p></div>
 </div>
 </section>
 </main>

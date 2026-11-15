@@ -1,6 +1,6 @@
 # rostdav-mfa brand guide
 
-rostdav-mfa is the phone half of Rostdav's sign-in: a self-hosted authenticator that approves a browser login with a tap and your fingerprint. Its look is Rostdav's look, signed in safely: the same folder, the same palette, the same type, with a lock on the front plate.
+rostdav-mfa is the phone half of Rostdav's sign-in: a self-hosted authenticator that approves a browser login with a tap and your fingerprint, and keeps the one-time codes of the user's other accounts in an encrypted vault. Its look is Rostdav's look, signed in safely: the same folder, the same palette, the same type, with a lock on the front plate.
 
 This guide is the plain-language version of `tokens.json`. The token tables below are generated from that file (`python3 brand/generate.py`) and checked in CI, so they cannot drift from the app.
 
@@ -87,16 +87,24 @@ Space Grotesk for text, headings and the wordmark (400, 500, 600, 700). JetBrain
 - Touch targets are at least 48 dp; buttons are 56 dp, number choices 72 dp.
 - Number choices are announced as "Number N". Countdown rings announce the time left, not the digits. Icons that carry no information are hidden from TalkBack.
 - Nothing is clipped at 200% font size: Approve scrolls, titles end in an ellipsis, and the trailing value of a row always stays visible.
-- The Approve screen blocks screenshots and the recents preview (`FLAG_SECURE`).
+- The Approve screen, the Overview while the vault is unlocked, and the add, backup and restore screens block screenshots and the recents preview (`FLAG_SECURE`). Pictures of them for `media/` are rendered from the composables by tests, never by weakening the flag.
 
 ## Voice
 
-Short and plain. Say what happened and what to do next. "This phone was removed on the server." Not "Authentication failure (code 17)." No exclamation marks, no emoji, no scare words. The app does not promise more than it does: the authenticator vault is called **planned** until it exists.
+Short and plain. Say what happened and what to do next. "This phone was removed on the server." Not "Authentication failure (code 17)." No exclamation marks, no emoji, no scare words. The app does not promise more than it does: what is missing is named plainly ("no search", "no service logos", "no store release"), not dressed up as coming soon.
 
-## Planned screens (the vault)
+## Vault screens
 
-The Accounts list and Add account screens are designed but not built (sub-projects 2 and 3). The mock-ups in `brand/store/vault-mockups/` use sample data and are labelled as mock-ups.
+The vault screens are built and replace the earlier mock-ups:
+
+- **Accounts** is a section of the Overview, not a tab. Its header is the eyebrow "Accounts", "Lock now" while open and a `+` button. One card per state: locked (Unlock), no vault yet (Add your first account), empty, the account list, and "The vault cannot be opened" (Restore from a backup, Start a new vault).
+- An **account row** has the letter tile (no service logos), the service as title, the account name as subtitle, the code in JetBrains Mono in two groups (`482 731`) and the countdown ring. In the last five seconds code and ring take the danger colour. A HOTP row says "Tap to generate" and has no ring.
+- A **warning banner** "No backup yet" with "Make a backup" and "Later" sits above the list while there is no backup.
+- **Add account** offers Scan QR code, Enter by hand and Import a backup. A scan leads to **Check the account**, which shows the names, the settings and the first code before Add.
+- **Backup** (from Settings or the banner) explains first that removing the screen lock deletes the vault, then Create backup (a passphrase twice) and Restore from a backup.
+
+Screenshots: `media/04`, `05`, `11`, `12` and `13`, dark and light. They use made-up services and public test secrets.
 
 ## Store listing
 
-Texts for F-Droid and Play are in `brand/store/en/` and `brand/store/de/`: a short description of at most 80 characters and a full description of at most 4000. The feature graphic and phone frames are in `brand/store/`. They show only what exists.
+Texts for F-Droid and Play are in `brand/store/en/` and `brand/store/de/`: a short description of at most 80 characters and a full description of at most 4000. The feature graphic and phone frames are in `brand/store/`, rendered from `feature-graphic.html`, `hero.html` and `frame.html?img=...&caption=...` with a headless browser at their own size (`frame-05-accounts.png` shows the vault). They show only what exists; re-render them when the screenshots in `media/` change.

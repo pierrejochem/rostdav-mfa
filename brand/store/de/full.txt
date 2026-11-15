@@ -1,25 +1,34 @@
-rostdav-mfa ist die Telefon-Seite der Anmeldung an deinem eigenen Rostdav-Server.
+rostdav-mfa ist die Telefon-Seite der Anmeldung an deinem eigenen Rostdav-Server und ein Authenticator für die Einmalcodes deiner anderen Konten.
 
 Meldest du dich im Browser bei Rostdav an, bekommt dein Telefon eine Anfrage. Sie zeigt den Dienst, das Gerät und den ungefähren Ort der Anmeldung. Du wählst die Zahl, die der Browser zeigt, bestätigst mit Fingerabdruck oder Gesicht, und der Browser meldet dich an. Stimmt die Zahl nicht oder tippst du auf Ablehnen, wird die Anmeldung abgelehnt.
+
+Der Bereich Konten in der Übersicht bewahrt die zeitbasierten (TOTP) und zählerbasierten (HOTP) Codes deiner anderen Konten auf. Ein Konto fügst du hinzu, indem du den QR-Code des Dienstes scannst oder seinen geheimen Schlüssel eintippst. Jeder Code zeigt, wie viele Sekunden er noch gilt; ein Tipp kopiert ihn.
 
 Warum das sicher ist
 • Der Freigabeschlüssel entsteht im hardwaregestützten Schlüsselspeicher des Telefons und verlässt ihn nie. Er wird erst nach deinem Fingerabdruck oder deinem Gesicht benutzt.
 • Jede Anfrage und jede Antwort ist signiert. Der Server prüft Signatur, Zahl und Zeit.
+• Deine Konten liegen verschlüsselt auf dem Telefon, unter einem Schlüssel im Schlüsselspeicher, der sich nur nach Fingerabdruck, Gesicht oder PIN öffnet. Der Tresor sperrt sich, wenn du auf Jetzt sperren tippst oder die App 60 Sekunden im Hintergrund war, und Android-Sicherungen enthalten ihn nicht.
 • Kein Konto, kein Cloud-Dienst, kein Tracking. Die App spricht nur mit deinem Rostdav-Server.
 • Die Standard-Version braucht keine Google-Dienste. Sie holt neue Anfragen ab, solange die App offen ist.
-• Der Freigabe-Bildschirm blockiert Screenshots und die Vorschau in der App-Übersicht.
+• Der Freigabe-Bildschirm, der entsperrte Tresor und die Bildschirme zum Hinzufügen und Sichern blockieren Screenshots und die Vorschau in der App-Übersicht.
 • Telefon verloren? Entferne es in deinem Rostdav-Konto; es kann nie wieder eine Anmeldung freigeben.
 
 Das bekommst du
 • Zahlenabgleich: Eine Anfrage, die du nicht gestartet hast, lässt sich nicht aus Versehen freigeben.
 • Eine Übersicht der wartenden Anfragen, mit Zähler auf dem Reiter Anfragen.
 • Deine Telefone und die letzten Anmelde-Ereignisse, und eine Möglichkeit, ein Telefon zu entfernen.
+• Einmalcodes: Hinzufügen per Scan oder von Hand, den ersten Code vor dem Speichern prüfen, umbenennen und löschen.
+• Sichern und wiederherstellen: eine mit deiner Passphrase verschlüsselte Datei, gespeichert, wo du willst. Solange es keine Sicherung gibt, erinnert dich die App daran.
+• Lässt sich der Tresor nicht öffnen, stellst du eine Sicherung wieder her oder beginnst einen neuen Tresor.
 • Dunkles und helles Design, Deutsch und Englisch.
 
 Das brauchst du
 • Einen Rostdav-Server mit eingeschalteter Telefon-Anmeldung. Du verbindest dich mit dem QR-Code aus den Rostdav-Einstellungen im Web oder mit Adresse und Einmal-Token.
+• Eine Bildschirmsperre auf dem Telefon. Entfernst du sie, löscht Android den Tresor-Schlüssel, und die Codes sind verloren; eine Sicherung ist der Weg zurück.
 
-Später
-• Ein Authenticator-Tresor für Einmalcodes, verschlüsselt auf dem Telefon gespeichert. Er ist geplant und nicht Teil dieser Version.
+Was es (noch) nicht kann
+• Keine Suche, Sortierung oder Ordner für Konten und keine Dienst-Logos.
+• Kein Import aus anderen Authenticator-Apps; es liest QR-Codes und eigene Sicherungen.
+• Kopierte Codes werden nach 30 Sekunden aus der Zwischenablage gelöscht, solange die App offen ist; im Hintergrund lässt Android das womöglich nicht zu.
 
 rostdav-mfa ist Open Source unter der Apache-2.0- oder der MIT-Lizenz.

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>rostdav-mfa: Rostdav-Anmeldungen mit dem Fingerabdruck freigeben</title>
-<meta name="description" content="rostdav-mfa ist ein selbst gehosteter Authenticator für deinen eigenen Rostdav-Server: Anmeldung mit einem Tipp und deinem Fingerabdruck freigeben.">
+<title>rostdav-mfa: Rostdav-Anmeldungen freigeben und Einmalcodes aufbewahren</title>
+<meta name="description" content="rostdav-mfa ist ein selbst gehosteter Authenticator für deinen eigenen Rostdav-Server: Anmeldung mit einem Tipp und deinem Fingerabdruck freigeben und die Einmalcodes deiner anderen Konten verschlüsselt auf dem Telefon aufbewahren.">
 <link rel="alternate" hreflang="en" href="index.html">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="tokens.css">
@@ -19,12 +19,12 @@
 <main>
 <div class="hero">
 <div>
-<div class="eyebrow">Push-Freigabe für Rostdav</div>
+<div class="eyebrow">Push-Freigabe und Einmalcodes</div>
 <h1>Deine Sicherheit. Deine Kontrolle.</h1>
-<p class="lead">rostdav-mfa gibt Anmeldungen an deinem eigenen Rostdav-Server mit einem Tipp und deinem Fingerabdruck frei. Kein Konto, keine Cloud, kein Dritter.</p>
+<p class="lead">rostdav-mfa gibt Anmeldungen an deinem eigenen Rostdav-Server mit einem Tipp und deinem Fingerabdruck frei. Als Authenticator bewahrt sie auch die Einmalcodes deiner anderen Konten auf, verschlüsselt auf dem Telefon. Kein Konto, keine Cloud, kein Dritter.</p>
 <div class="cta"><a class="btn" href="#how">So funktioniert es</a><a class="btn o" href="https://github.com/pierrejochem/rostdav-mfa">Quellcode auf GitHub</a></div>
 </div>
-<img src="assets/hero.png" alt="Drei Telefon-Bildschirme: die Übersicht mit einer wartenden Anfrage, die Freigabe mit drei Zahlen und die Einstellungen." width="1600" height="800">
+<img src="assets/hero.png" alt="Drei Telefon-Bildschirme: die Einstellungen, die Freigabe mit drei Zahlen und die Übersicht mit einer wartenden Anfrage und Einmalcodes." width="1600" height="800">
 </div>
 <section aria-labelledby="f">
 <h2 id="f">Was es kann</h2>
@@ -32,6 +32,8 @@
 <div class="card"><h3>Zahlenabgleich</h3><p>Der Browser zeigt eine Zahl, dein Telefon drei. Du wählst die richtige. So lässt sich eine Anfrage, die du nicht gestartet hast, nicht aus Versehen freigeben.</p></div>
 <div class="card"><h3>Mit dem Fingerabdruck signiert</h3><p>Der Freigabeschlüssel liegt im hardwaregestützten Schlüsselspeicher des Telefons. Er wird erst nach Fingerabdruck oder Gesicht benutzt und verlässt das Telefon nie.</p></div>
 <div class="card"><h3>Läuft auf deinem Rostdav</h3><p>Die App spricht nur mit deinem Server. Die Standard-Version braucht keinen Google-Dienst; sie holt neue Anfragen ab, solange die App offen ist.</p></div>
+<div class="card"><h3>Authenticator-Codes</h3><p>Bewahre die zeitbasierten (TOTP) und zählerbasierten (HOTP) Codes deiner anderen Konten auf dem Telefon auf. Ein Konto fügst du per QR-Code oder durch Eintippen des geheimen Schlüssels hinzu. Ein Tipp kopiert den Code.</p></div>
+<div class="card"><h3>Sichern und wiederherstellen</h3><p>Speichere deine Konten in einer mit einer Passphrase verschlüsselten Datei und stelle sie auf diesem oder einem anderen Telefon wieder her. Solange es keine Sicherung gibt, erinnert dich die App daran.</p></div>
 </div>
 </section>
 <section id="how" aria-labelledby="hw">
@@ -41,27 +43,33 @@
 <li><h3>Abgleichen</h3><p>Dein Telefon zeigt Dienst, Gerät und ungefähren Ort. Du wählst die Zahl, die der Browser zeigt.</p></li>
 <li><h3>Bestätigen</h3><p>Du bestätigst mit Fingerabdruck oder Gesicht, und der Browser meldet dich an. Falsche Zahl oder Ablehnen: Die Anmeldung wird abgelehnt.</p></li>
 </ol>
+<h3>Einmalcodes</h3>
+<ol class="steps">
+<li><h3>Entsperren</h3><p>Der Bereich Konten in der Übersicht öffnet sich mit Fingerabdruck, Gesicht oder der PIN des Telefons. Er sperrt sich wieder, wenn du auf Jetzt sperren tippst oder die App 60 Sekunden im Hintergrund war.</p></li>
+<li><h3>Hinzufügen</h3><p>Scanne den QR-Code, den ein Dienst beim Einschalten der Zwei-Schritt-Anmeldung zeigt, prüfe die Namen und den ersten Code und füge das Konto hinzu. Oder tippe den geheimen Schlüssel von Hand ein.</p></li>
+<li><h3>Benutzen</h3><p>Ein zeitbasiertes Konto zeigt seinen aktuellen Code und die verbleibenden Sekunden; ein zählerbasiertes erzeugt einen Code, wenn du darauf tippst. Ein Tipp kopiert, langes Drücken bietet Kopieren, Umbenennen und Löschen.</p></li>
+</ol>
 </section>
 <section aria-labelledby="sc">
 <h2 id="sc">Die App</h2>
 <div class="shots">
-<img src="assets/05-overview-request-dark.png" alt="Übersicht mit einer wartenden Anmeldeanfrage" width="1080" height="2400" loading="lazy">
+<img src="assets/05-overview-request-dark.png" alt="Übersicht mit einer wartenden Anmeldeanfrage und drei Konten mit ihren Codes" width="1080" height="2400" loading="lazy">
 <img src="assets/09-approve-dark.png" alt="Freigabe mit drei Zahlen zur Auswahl" width="1080" height="2400" loading="lazy">
-<img src="assets/06-requests-dark.png" alt="Die Liste der Anmeldeanfragen" width="1080" height="2400" loading="lazy">
-<img src="assets/07-settings-dark.png" alt="Einstellungen mit dem verbundenen Server" width="1080" height="2400" loading="lazy">
+<img src="assets/11-accounts-dark.png" alt="Der Bereich Konten mit laufenden Codes und dem Hinweis, dass es noch keine Sicherung gibt" width="1080" height="2400" loading="lazy">
+<img src="assets/13-backup-dark.png" alt="Der Sicherungs-Bildschirm: Sicherung mit Passphrase erstellen oder wiederherstellen" width="1080" height="2400" loading="lazy">
 </div>
 </section>
 <section id="security" aria-labelledby="sm">
 <h2 id="sm">Sicherheitsmodell</h2>
 <ul class="facts">
-<li><strong>Hardwaregestützter Schlüssel.</strong> Der Freigabeschlüssel entsteht im Android-Schlüsselspeicher und wird nur nach Biometrie benutzt.</li><li><strong>Alles ist signiert.</strong> Anfragen und Antworten tragen Signaturen; der Server prüft Signatur, Zahl und Zeit.</li><li><strong>Kein Tracking.</strong> Die App hat kein Konto, keine Analyse und spricht nur mit deinem Rostdav-Server.</li><li><strong>Screenshots gesperrt.</strong> Die Freigabe blockiert Bildschirmaufnahmen und die Vorschau in der App-Übersicht.</li><li><strong>Telefon verloren.</strong> Entferne es in deinem Rostdav-Konto; es kann nie wieder eine Anmeldung freigeben.</li>
+<li><strong>Hardwaregestützter Schlüssel.</strong> Der Freigabeschlüssel entsteht im Android-Schlüsselspeicher und wird nur nach Biometrie benutzt.</li><li><strong>Alles ist signiert.</strong> Anfragen und Antworten tragen Signaturen; der Server prüft Signatur, Zahl und Zeit.</li><li><strong>Kein Tracking.</strong> Die App hat kein Konto, keine Analyse und spricht nur mit deinem Rostdav-Server.</li><li><strong>Codes verschlüsselt auf dem Telefon.</strong> Die Konten sind mit AES-256-GCM verschlüsselt, unter einem Schlüssel im Android-Schlüsselspeicher, der sich nur nach Fingerabdruck, Gesicht oder PIN öffnet. Android-Sicherungen enthalten sie nicht.</li><li><strong>Screenshots gesperrt.</strong> Die Freigabe, der entsperrte Tresor und die Bildschirme zum Hinzufügen und Sichern blockieren Bildschirmaufnahmen und die Vorschau in der App-Übersicht.</li><li><strong>Die Bildschirmsperre zählt.</strong> Entfernst du die Bildschirmsperre des Telefons, löscht Android den Tresor-Schlüssel, und die Codes sind verloren. Eine Sicherung ist der Weg zurück.</li><li><strong>Telefon verloren.</strong> Entferne es in deinem Rostdav-Konto; es kann nie wieder eine Anmeldung freigeben.</li>
 </ul>
 </section>
 <section id="status" aria-labelledby="st">
 <h2 id="st">Stand</h2>
 <div class="grid">
-<div class="card"><h3>Heute schon da</h3><p>Einrichten per QR-Code oder von Hand, Zahlenabgleich, Freigabe per Biometrie, die Liste deiner Telefone und letzten Ereignisse, Telefon entfernen, dunkles und helles Design, Deutsch und Englisch. Auf einem Emulator gegen ein echtes Rostdav getestet.</p></div>
-<div class="note"><h3>Geplant: Authenticator-Tresor</h3><p>Einmalcodes für andere Dienste, verschlüsselt auf dem Telefon gespeichert. Geplant, noch nicht gebaut. Es gibt noch keine Store-Version; du baust die App aus dem Quellcode.</p></div>
+<div class="card"><h3>Heute schon da</h3><p>Einrichten per QR-Code oder von Hand, Zahlenabgleich, Freigabe per Biometrie, die Liste deiner Telefone und letzten Ereignisse, Telefon entfernen. Der Authenticator-Tresor: TOTP- und HOTP-Codes, Hinzufügen per Scan oder von Hand, Umbenennen und Löschen, verschlüsselte Sicherung und Wiederherstellung, Rettung, wenn sich der Tresor nicht öffnen lässt. Dunkles und helles Design, Deutsch und Englisch. Auf einem Android-15-Emulator gegen ein echtes Rostdav getestet.</p></div>
+<div class="note"><h3>Noch nicht da</h3><p>Keine Suche, Sortierung oder Ordner für Konten, keine Dienst-Logos, kein Import aus anderen Authenticator-Apps (nur QR-Codes und eigene Sicherungen). Nicht getestet auf einem echten Telefon, auf Android 9 oder 10 oder mit StrongBox. Es gibt noch keine Store-Version; du baust die App aus dem Quellcode.</p></div>
 </div>
 </section>
 </main>

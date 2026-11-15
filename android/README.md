@@ -4,20 +4,29 @@ Native Android app for rostdav-mfa push approval (spec phases 2 to 4). The app t
 
 ## Screenshots
 
-Taken on the emulator against a real Rostdav, dark first, then light. The Approve screen blocks screen capture (`FLAG_SECURE`), so its pictures are rendered by `ScreenshotsTest` instead of captured from the window.
+Pictures 01 to 03, 06 and 08 were taken on the emulator against a real Rostdav. The other screens block screen capture (`FLAG_SECURE`: Approve, the Overview while the vault is unlocked, and the add, backup and restore screens), so their pictures are rendered from the real composables with sample data: Approve by `ScreenshotsTest`, the vault screens and Settings by `VaultScreenshotsTest`. The vault pictures use made-up services and public test secrets. `VaultScreenshotsTest` is opt-in (it is skipped unless the instrumentation argument `screenshots` is `true`); its class comment has the commands.
 
-| | | | |
-| --- | --- | --- | --- |
-| ![Connect to your server](../media/01-onboarding-dark.png) | ![Enter by hand](../media/02-manual-entry-dark.png) | ![Name this phone](../media/03-name-phone-dark.png) | ![Overview, no requests](../media/04-overview-empty-dark.png) |
-| ![Overview with a request](../media/05-overview-request-dark.png) | ![Requests](../media/06-requests-dark.png) | ![Settings](../media/07-settings-dark.png) | ![Devices](../media/08-devices-dark.png) |
-| ![Approve](../media/09-approve-dark.png) | ![Approved](../media/10-approved-dark.png) | ![Connect to your server, light](../media/01-onboarding-light.png) | ![Overview, light](../media/05-overview-request-light.png) |
-| ![Approve, light](../media/09-approve-light.png) | ![Requests, light](../media/06-requests-light.png) | ![Settings, light](../media/07-settings-light.png) | ![Devices, light](../media/08-devices-light.png) |
+| Screen | Dark | Light |
+| --- | --- | --- |
+| Connect to your server | ![Connect to your server, dark](../media/01-onboarding-dark.png) | ![Connect to your server, light](../media/01-onboarding-light.png) |
+| Enter by hand | ![Enter by hand, dark](../media/02-manual-entry-dark.png) | ![Enter by hand, light](../media/02-manual-entry-light.png) |
+| Name this phone | ![Name this phone, dark](../media/03-name-phone-dark.png) | ![Name this phone, light](../media/03-name-phone-light.png) |
+| Overview, no requests, vault locked | ![Overview, no requests, vault locked, dark](../media/04-overview-empty-dark.png) | ![Overview, no requests, vault locked, light](../media/04-overview-empty-light.png) |
+| Overview with a request and accounts | ![Overview with a request and accounts, dark](../media/05-overview-request-dark.png) | ![Overview with a request and accounts, light](../media/05-overview-request-light.png) |
+| Requests | ![Requests, dark](../media/06-requests-dark.png) | ![Requests, light](../media/06-requests-light.png) |
+| Settings | ![Settings, dark](../media/07-settings-dark.png) | ![Settings, light](../media/07-settings-light.png) |
+| Devices | ![Devices, dark](../media/08-devices-dark.png) | ![Devices, light](../media/08-devices-light.png) |
+| Approve | ![Approve, dark](../media/09-approve-dark.png) | ![Approve, light](../media/09-approve-light.png) |
+| Approved | ![Approved, dark](../media/10-approved-dark.png) | ![Approved, light](../media/10-approved-light.png) |
+| Accounts with live codes and the backup reminder | ![Accounts with live codes and the backup reminder, dark](../media/11-accounts-dark.png) | ![Accounts with live codes and the backup reminder, light](../media/11-accounts-light.png) |
+| Add account: check the names and the first code | ![Add account: check the names and the first code, dark](../media/12-add-account-dark.png) | ![Add account: check the names and the first code, light](../media/12-add-account-light.png) |
+| Backup | ![Backup, dark](../media/13-backup-dark.png) | ![Backup, light](../media/13-backup-light.png) |
 
 ## Modules
 
 - `:contract` is a plain JVM module with the byte-exact logic (canonical strings, request signing, signature encoding). Its tests read the shared vectors `../contract/vectors/v1.json`, the same file the Rust tests use.
-- `:vault` is the vault core, a plain JVM module: TOTP and HOTP, otpauth URIs, the encrypted seed store, the unlocked session with auto-lock and the passphrase-encrypted backup. Argon2id comes from Bouncy Castle. `docs/vault.md` has the formats and rules. There is no vault screen yet.
-- `:app` is the Android application, package `app.rustmfa.android`, with the flavors `nopush` (default) and `fcm`.
+- `:vault` is the vault core, a plain JVM module: TOTP and HOTP, otpauth URIs, the encrypted seed store, the unlocked session with auto-lock and the passphrase-encrypted backup. Argon2id comes from Bouncy Castle. `docs/vault.md` has the formats, the rules and the screens.
+- `:app` is the Android application, package `app.rustmfa.android`, with the flavors `nopush` (default) and `fcm`. The vault screens are in `ui/vault`, the view models and Android parts of the vault in `vault`.
 
 ## Build
 

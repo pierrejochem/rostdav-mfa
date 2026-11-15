@@ -79,9 +79,13 @@ class SiteTest(unittest.TestCase):
             for phrase in ("play store", "app store", "download now", "jetzt herunterladen", "f-droid"):
                 self.assertNotIn(phrase, text, "%s mentions %r" % (name, phrase))
 
-    def test_the_vault_is_called_planned(self):
-        self.assertIn("planned", " ".join(scan("index.html").text).lower())
-        self.assertIn("geplant", " ".join(scan("index.de.html").text).lower())
+    def test_the_vault_is_described_as_working(self):
+        en = " ".join(scan("index.html").text)
+        de = " ".join(scan("index.de.html").text)
+        self.assertIn("authenticator", en.lower())
+        self.assertNotIn("planned", en.lower())
+        self.assertIn("Authenticator", de)
+        self.assertNotIn("geplant", de.lower())
 
 
 if __name__ == "__main__":

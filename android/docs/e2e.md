@@ -76,6 +76,24 @@ Date: 2026-11-15. Same emulator (`nc-test`, API 35) and a fresh Rostdav 0.10.1 t
 | Dark mode text | Found that headings used black on the dark background (no default text colour outside a Surface). Fixed with a test. |
 | API 28 and 29 (solid glass) | Not run: no API 28 system image is installed. Covered by the unit test of `glassStyle`. |
 
+### Vault UI by hand
+
+Date: 2026-11-15. Same emulator (API 35, PIN 1234, one virtual fingerprint), the `nopush` debug build, the test Rostdav on `127.0.0.1:18080` with fresh test users per run. Screens were driven with `input tap` and uiautomator dumps, the fingerprint with `adb -e emu finger touch 1`. Only public test secrets were used (`JBSWY3DPEHPK3PXP`, `GEZDGNBVGY3TQOJQ`, `MFRGGZDFMZTWQ2LK`).
+
+| Step | Result |
+| --- | --- |
+| "Add your first account", fingerprint, Enter by hand, service "Example" with `JBSWY3DPEHPK3PXP` | Passed. The vault was created and the row shows. Three consecutive codes equalled an independent RFC 6238 calculation (Python standard library). |
+| Add the same account again | Passed. "This account is already in the vault"; the form stays. The secret was not in the accessibility dump (dots). |
+| `adb exec-out screencap -p` while the vault is unlocked | Passed. The picture is black (`FLAG_SECURE`). |
+| Make a backup from the "No backup yet" banner: passphrase twice, the system picker in Downloads | Passed. "Backup saved." after about 6 s; the file is a 669-byte `rostdav-mfa` backup (Argon2id m=65536, t=3, p=1). The banner went away; Settings showed "Last backup: Nov 15, 2026". |
+| `pm clear`, enroll again, new vault, Add account, Import a backup with a wrong passphrase, then the right one | Passed. "Wrong passphrase or damaged file.", then "Added 2, skipped 0"; the codes matched the RFC 6238 calculation. |
+| Clear the screen lock (`locksettings clear`), set it again, enroll the fingerprint again, open the app, Unlock | Passed. "The vault cannot be opened" with "Restore from a backup" and "Start a new vault". |
+| Restore from a backup: wrong passphrase, then the right one, Replace, cancel the prompt, Finish restoring | Passed. The wrong passphrase gave the error and no confirm dialog; after the cancelled prompt the screen offered "Finish restoring"; then "Added 2, skipped 0" and the old account was gone. The lock screen was put back (PIN 1234, one fingerprint). |
+
+Not done by hand: scanning a real QR code with the camera (the parsing is unit-tested), "Start a new vault" (JVM and dialog tests), auto-lock after 60 seconds away (`MainActivityLifecycleTest` and JVM tests). Not verifiable on this emulator: the vault key on API 28 and 29 (the `setUserAuthenticationValidityDurationSeconds` branch), StrongBox (the emulator has none, so the normal Keystore ran), a real fingerprint sensor, and clearing the clipboard while the app is in the background (Android 10 and newer do not let a background app read the clipboard, so the 30-second clear is best effort there).
+
+The vault screenshots in `media/` (04, 05, 07, 11, 12 and 13) are rendered by the opt-in `VaultScreenshotsTest`, because the window cannot be captured while the vault is open.
+
 ### Not covered by the emulator
 
 A hostile QR code on a real camera, notification taps, and everything in the next section.
@@ -94,4 +112,10 @@ Do these on a real phone before relying on the app. Tick and date each one.
 - [ ] **Android 9 and 10.** On API 28 or 29 the approval key is created with a validity of -1 (a fresh biometric each time). Enroll and approve once on such a phone.
 - [ ] **Clock.** Set the phone clock a few minutes wrong with automatic time off. Requests still work (the app corrects by the server's `Date`); with a very wrong clock the app tells the user to check the date and time.
 - [ ] **Recents and screenshots.** The Approve screen is blank in the recents preview and cannot be captured.
+- [ ] **Vault unlock with a real sensor.** Unlock the vault with the fingerprint and with the PIN. Cancelling the prompt leaves it locked and shows no error.
+- [ ] **Vault on Android 9 and 10.** Create the vault, add an account, lock and unlock again on API 28 or 29.
+- [ ] **Vault key in StrongBox.** On a phone with StrongBox, the vault key is created there (and the vault works).
+- [ ] **Clipboard.** Copy a code, leave the app at once, wait 30 seconds: note whether the clip is still there (best effort, expected to stay on Android 10 and newer). With the app open, the clip is cleared.
+- [ ] **Screen lock removed.** Make a backup, remove the screen lock, set it again: the vault cannot be opened, and "Restore from a backup" brings the accounts back.
+- [ ] **Vault recents and screenshots.** While the vault is open, and on the add and backup screens, the recents preview is blank and a screenshot is refused.
 - [ ] **Backups.** `adb backup` or a cloud restore to another phone does not carry the enrollment (the keys cannot move); the new phone starts at onboarding.

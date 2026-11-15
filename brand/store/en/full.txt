@@ -1,25 +1,34 @@
-rostdav-mfa is the phone half of the sign-in to your own Rostdav server.
+rostdav-mfa is the phone half of the sign-in to your own Rostdav server, and an authenticator for the one-time codes of your other accounts.
 
 When you sign in to Rostdav in a browser, your phone gets a request. It shows the service, the device and the rough place of the sign-in. You pick the number the browser shows, confirm with your fingerprint or face, and the browser signs in. If the number is wrong, or you tap Deny, the sign-in is refused.
+
+The Accounts section on the Overview keeps the time-based (TOTP) and counter-based (HOTP) codes of your other accounts. You add an account by scanning the QR code the service shows, or by typing its secret key. Each code shows the seconds it has left; a tap copies it.
 
 Why it is safe
 • The approval key is created in the phone's hardware-backed keystore and never leaves it. It is only used after your fingerprint or face.
 • Every request and every answer is signed. The server checks the signature, the number and the time.
+• Your accounts are encrypted on the phone under a keystore key that opens only after your fingerprint, face or PIN. The vault locks when you tap Lock now or after the app was away for 60 seconds, and it is left out of Android backups.
 • No account, no cloud service, no tracking. The app talks only to your Rostdav server.
 • The default build needs no Google services at all. It finds new requests by checking in while the app is open.
-• The approval screen blocks screenshots and the recents preview.
+• The approval screen, the unlocked vault and the add and backup screens block screenshots and the recents preview.
 • Lost the phone? Remove it from your Rostdav account; it can never approve a sign-in again.
 
 What you get
 • Number matching, so a request you did not start cannot be approved by accident.
 • An overview of waiting requests, with a count on the Requests tab.
 • Your phones and the latest sign-in events, and a way to remove a phone.
+• One-time codes: add by scan or by hand, check the first code before saving, rename and delete.
+• Backup and restore: a file encrypted with your passphrase, saved where you choose. The app reminds you while there is no backup.
+• If the vault cannot be opened, you can restore a backup or start a new vault.
 • Dark and light themes, English and German.
 
 What you need
 • A Rostdav server with phone sign-in switched on. You connect by scanning the QR code in Rostdav's web settings, or by typing the address and the one-time token.
+• A screen lock on the phone. Removing it makes Android delete the vault key and the codes are lost; a backup is the way back.
 
-Coming later
-• An authenticator vault for one-time codes, stored encrypted on the phone. It is planned and not part of this version.
+What it does not do (yet)
+• No search, sorting or folders for accounts, and no service logos.
+• No import from other authenticator apps; it reads QR codes and its own backups.
+• Copied codes are cleared from the clipboard after 30 seconds while the app is open; once the app is in the background, Android may not let it clear them.
 
 rostdav-mfa is open source under the Apache 2.0 or MIT licence.
