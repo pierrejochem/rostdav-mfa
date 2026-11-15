@@ -183,4 +183,17 @@
     <string name="backup_error_decrypt">Wrong passphrase or damaged file.</string>
     <string name="backup_error_memory">Not enough memory for the backup. Close other apps and try again.</string>
     <string name="backup_error_file">Could not read or write the file.</string>
+    <string name="vault_new_failed">The vault could not be deleted. Try again.</string>
+    <string name="restore_text">Choose the backup file and enter its passphrase. The unreadable vault is replaced only after you confirm.</string>
+    <string name="restore_working">Working on the restore</string>
+    <string name="restore_confirm_text">This replaces the unreadable vault</string>
+    <string name="restore_replace">Replace</string>
+    <string name="restore_finish_text">The unreadable vault is deleted. Unlock to add the accounts from the backup to the new vault.</string>
+    <string name="restore_finish">Finish restoring</string>
+    <string name="restore_done_button">Back to the overview</string>
+    <string name="restore_abandon_title">Stop restoring?</string>
+    <string name="restore_abandon_text">The accounts from the backup are dropped from memory. The backup file stays, so you can restore it again.</string>
+    <string name="restore_abandon_confirm">Stop</string>
+    <string name="vault_new_text">This deletes the unreadable vault for good</string>
+    <string name="vault_new_confirm">Delete and start new</string>
 </resources>

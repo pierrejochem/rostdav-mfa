@@ -4,6 +4,8 @@ import app.rustmfa.vault.ImportResult
 import app.rustmfa.vault.OtpAccount
 import app.rustmfa.vault.SeedStore
 import app.rustmfa.vault.VaultSession
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 
 /**
  * A [VaultGateway] over a real [VaultSession] with an in-memory store. It records the calls in order and can be
@@ -13,6 +15,10 @@ class FakeVaultGateway(clock: () -> Long) : VaultGateway {
     val calls = mutableListOf<String>()
     val unlockFailures = ArrayDeque<Throwable>()
     val mutationFailures = ArrayDeque<Throwable>()
+    val resetFailures = ArrayDeque<Throwable>()
+
+    /** When set, the next unlock waits for it (a prompt on screen); a cancelled wait records "unlock-cancelled". */
+    var unlockGate: CompletableDeferred<Unit>? = null
 
     /** The stored vault; null when there is none. */
     var stored: List<OtpAccount>? = null
@@ -40,6 +46,15 @@ class FakeVaultGateway(clock: () -> Long) : VaultGateway {
 
     override suspend fun unlock() {
         calls += "unlock"
+        unlockGate?.let { gate ->
+            unlockGate = null
+            try {
+                gate.await()
+            } catch (e: CancellationException) {
+                calls += "unlock-cancelled"
+                throw e
+            }
+        }
         unlockFailures.removeFirstOrNull()?.let { throw it }
         if (!session.isUnlocked) session.open()
     }
@@ -51,6 +66,7 @@ class FakeVaultGateway(clock: () -> Long) : VaultGateway {
 
     override suspend fun reset() {
         calls += "reset"
+        resetFailures.removeFirstOrNull()?.let { throw it }
         session.reset()
     }
 

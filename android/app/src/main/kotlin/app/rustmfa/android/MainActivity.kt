@@ -48,6 +48,7 @@ import app.rustmfa.android.ui.OnboardingViewModel
 import app.rustmfa.android.ui.RustMfaTheme
 import app.rustmfa.android.ui.vault.AccountActions
 import app.rustmfa.android.ui.vault.AccountsSection
+import app.rustmfa.android.ui.vault.NewVaultDialog
 import app.rustmfa.android.ui.vault.SecureWhile
 import app.rustmfa.android.ui.vault.VaultDest
 import app.rustmfa.android.ui.vault.vaultGraph
@@ -179,6 +180,7 @@ class MainActivity : FragmentActivity() {
             val vaultState by vault.state.collectAsState()
             val showNudge by vault.showNudge.collectAsState()
             var menuId by rememberSaveable { mutableStateOf<String?>(null) }
+            var askNewVault by rememberSaveable { mutableStateOf(false) }
             SecureWhile(vaultState is VaultUiState.Unlocked || vaultState == VaultUiState.Empty)
             LaunchedEffect(Unit) {
                 vault.events.collect { e ->
@@ -260,8 +262,17 @@ class MainActivity : FragmentActivity() {
                                     onOpenMenu = { menuId = it },
                                     onBackup = { nav.navigate(Dest.backup()) { launchSingleTop = true } },
                                     onDismissNudge = vault::dismissNudge,
-                                    onRestore = {}, // the cannot-be-opened flow (task 7)
-                                    onNewVault = {}, // the cannot-be-opened flow (task 7)
+                                    onRestore = { nav.navigate(VaultDest.RESTORE) { launchSingleTop = true } },
+                                    onNewVault = { askNewVault = true },
+                                )
+                            }
+                            if (askNewVault && vaultState == VaultUiState.NeedsReset) {
+                                NewVaultDialog(
+                                    onConfirm = {
+                                        askNewVault = false
+                                        vault.startNewVault()
+                                    },
+                                    onDismiss = { askNewVault = false },
                                 )
                             }
                         },

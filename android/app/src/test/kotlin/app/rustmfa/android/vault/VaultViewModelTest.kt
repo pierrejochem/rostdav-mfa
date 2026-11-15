@@ -22,7 +22,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.CoroutineScope
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -94,10 +97,11 @@ class VaultViewModelTest {
     /** Ends the view model's ticker when a test is over, so runTest does not chase it through virtual time. */
     private var finished = false
 
-    private fun viewModel() =
+    private fun viewModel(files: BackupFiles = NoFiles, restore: RestoreFlow = RestoreFlow(gateway, cpu = main)) =
         VaultViewModel(
-            gateway, clock, clipboard, prefs, NoFiles, appScope,
+            gateway, clock, clipboard, prefs, files, appScope,
             ticker = secondTicker(clock).takeWhile { !finished }.onEach { ticks++ },
+            restore = restore,
         )
 
     private fun vaultTest(body: suspend TestScope.() -> Unit) = runTest(main) {
@@ -501,5 +505,145 @@ class VaultViewModelTest {
         gateway.unlockFailures += IllegalStateException("boom")
         assertFalse(vm.ensureUnlocked())
         assertEquals(listOf<VaultEvent>(VaultEvent.Failed(app.rustmfa.android.R.string.vault_error_generic)), events)
+    }
+
+    /** A view model whose stored vault cannot be opened (the key is lost). */
+    private fun brokenVault(files: BackupFiles = NoFiles, restore: RestoreFlow = RestoreFlow(gateway, cpu = main)): VaultViewModel {
+        gateway.stored = emptyList()
+        val vm = viewModel(files, restore)
+        gateway.unlockFailures += VaultKeyLostException()
+        vm.unlock()
+        assertEquals(VaultUiState.NeedsReset, vm.state.value)
+        gateway.calls.clear()
+        return vm
+    }
+
+    @Test
+    fun `startNewVault resets once and ends in NoVault`() = vaultTest {
+        val vm = brokenVault()
+        vm.startNewVault()
+        assertEquals(listOf("reset"), gateway.calls)
+        assertEquals(VaultUiState.NoVault, vm.state.value)
+        assertNull(gateway.stored)
+    }
+
+    @Test
+    fun `a failing reset leaves NeedsReset with an error event`() = vaultTest {
+        val vm = brokenVault()
+        val events = events(vm)
+        gateway.resetFailures += IOException("cannot delete")
+        vm.startNewVault()
+        assertEquals(VaultUiState.NeedsReset, vm.state.value)
+        assertEquals(listOf<VaultEvent>(VaultEvent.Failed(app.rustmfa.android.R.string.vault_new_failed)), events)
+    }
+
+    @Test
+    fun `startNewVault cancels an unlock in flight before the reset`() = vaultTest {
+        val vm = brokenVault()
+        gateway.unlockGate = CompletableDeferred()
+        vm.unlock()
+        vm.startNewVault()
+        assertEquals(listOf("unlock", "unlock-cancelled", "reset"), gateway.calls)
+        assertEquals(VaultUiState.NoVault, vm.state.value)
+    }
+
+    @Test
+    fun `a prompt dismissed for the reset counts as cancelled for its caller`() = vaultTest {
+        val vm = brokenVault()
+        gateway.unlockGate = CompletableDeferred()
+        val opened = async { vm.ensureUnlocked() }
+        vm.startNewVault()
+        assertFalse(opened.await())
+        assertEquals(listOf("unlock", "unlock-cancelled", "reset"), gateway.calls)
+    }
+
+    private val backupAccounts = listOf(totp, hotp)
+    private var handedOut: List<OtpAccount>? = null
+
+    private fun restoreFlow() = RestoreFlow(
+        gateway,
+        decrypt = { _, pass ->
+            gateway.calls += "decrypt:${String(pass)}"
+            backupAccounts.map { it.copy(secret = it.secret.copyOf()) }.also { handedOut = it }
+        },
+        cpu = main,
+    )
+
+    private class CountingFiles : BackupFiles {
+        val reads = mutableListOf<Int>()
+
+        override suspend fun read(uri: Uri, maxBytes: Int): ByteArray {
+            reads += maxBytes
+            return byteArrayOf(1)
+        }
+
+        override suspend fun write(uri: Uri, bytes: ByteArray) = error("unused")
+    }
+
+    @Test
+    fun `a restore reads with the cap, decrypts before the reset and shows the restored rows`() = vaultTest {
+        val files = CountingFiles()
+        val vm = brokenVault(files, restoreFlow())
+        val pass = "correct-horse-9".toCharArray()
+        vm.restoreStart(BackupViewModelTest.fakeUri(), pass)
+        assertEquals(listOf(MAX_BACKUP_BYTES), files.reads)
+        assertEquals(RestoreState.Decrypted, vm.restore.state.value)
+        assertEquals(listOf("decrypt:correct-horse-9"), gateway.calls)
+        assertTrue(pass.all { it == Char(0) })
+        assertEquals(VaultUiState.NeedsReset, vm.state.value)
+        vm.restoreConfirm()
+        assertEquals(listOf("decrypt:correct-horse-9", "reset", "unlock", "import"), gateway.calls)
+        assertEquals(RestoreState.Done(app.rustmfa.vault.ImportResult(2, 0)), vm.restore.state.value)
+        assertEquals(2, vm.rows().size)
+    }
+
+    @Test
+    fun `restoreConfirm cancels an unlock in flight before the reset`() = vaultTest {
+        val vm = brokenVault(CountingFiles(), restoreFlow())
+        vm.restoreStart(BackupViewModelTest.fakeUri(), "correct-horse-9".toCharArray())
+        gateway.unlockGate = CompletableDeferred()
+        vm.unlock()
+        vm.restoreConfirm()
+        assertEquals(listOf("decrypt:correct-horse-9", "unlock", "unlock-cancelled", "reset", "unlock", "import"), gateway.calls)
+        assertEquals(2, vm.rows().size)
+    }
+
+    @Test
+    fun `a cancelled prompt after the reset is FinishPending, then restoreFinish imports`() = vaultTest {
+        val vm = brokenVault(CountingFiles(), restoreFlow())
+        val events = events(vm)
+        vm.restoreStart(BackupViewModelTest.fakeUri(), "correct-horse-9".toCharArray())
+        gateway.unlockFailures += VaultAuthRequiredException()
+        vm.restoreConfirm()
+        assertEquals(RestoreState.FinishPending, vm.restore.state.value)
+        assertEquals(VaultUiState.NoVault, vm.state.value)
+        assertTrue(events.isEmpty(), "a cancelled prompt is no error")
+        vm.restoreFinish()
+        assertEquals(2, vm.rows().size)
+        assertEquals(1, gateway.calls.count { it == "reset" })
+    }
+
+    @Test
+    fun `restoreAbandon zeroes the kept list`() = vaultTest {
+        val vm = brokenVault(CountingFiles(), restoreFlow())
+        vm.restoreStart(BackupViewModelTest.fakeUri(), "correct-horse-9".toCharArray())
+        gateway.unlockFailures += VaultAuthRequiredException()
+        vm.restoreConfirm()
+        vm.restoreAbandon()
+        assertEquals(RestoreState.Idle, vm.restore.state.value)
+        assertTrue(handedOut!!.all { a -> a.secret.all { it == 0.toByte() } })
+    }
+
+    @Test
+    fun `clearing the view model zeroes a kept list`() = vaultTest {
+        val store = ViewModelStore()
+        val restore = restoreFlow()
+        gateway.stored = emptyList()
+        val vm = ViewModelProvider.create(store, viewModelFactory { initializer { viewModel(CountingFiles(), restore) } })[VaultViewModel::class]
+        vm.restoreStart(BackupViewModelTest.fakeUri(), "correct-horse-9".toCharArray())
+        assertEquals(RestoreState.Decrypted, restore.state.value)
+        store.clear()
+        assertTrue(handedOut!!.all { a -> a.secret.all { it == 0.toByte() } })
+        assertNull(restore.pendingList)
     }
 }

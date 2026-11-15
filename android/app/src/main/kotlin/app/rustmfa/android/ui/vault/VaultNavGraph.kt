@@ -35,6 +35,7 @@ object VaultDest {
     const val SCAN = "vault/scan"
     const val CONFIRM = "vault/confirm"
     const val MANUAL = "vault/manual"
+    const val RESTORE = "vault/restore"
 }
 
 /**
@@ -68,7 +69,7 @@ class ManualFormHolder : ViewModel() {
 /**
  * The add flow (the Add screen, the scanner, Confirm, and by hand; an added account returns to the Overview) and the
  * Backup screen, whose view model [backupFactory] builds (scoped to its back stack entry, so a rotation keeps a
- * running backup).
+ * running backup), and the restore over a vault that cannot be opened (its work and state live in [VaultViewModel]).
  */
 fun NavGraphBuilder.vaultGraph(nav: NavHostController, vm: VaultViewModel, backupFactory: ViewModelProvider.Factory) {
     composable(
@@ -83,6 +84,9 @@ fun NavGraphBuilder.vaultGraph(nav: NavHostController, vm: VaultViewModel, backu
         // the Overview rows and the nudge follow a restore or a new backup
         LaunchedEffect(state) { if (state == BackupState.Saved || state is BackupState.Restored) vm.refresh() }
         BackupScreen(backup, onBack = { nav.popIfAt(Dest.BACKUP) }, startRestore = entry.arguments?.getBoolean("restore") == true)
+    }
+    composable(VaultDest.RESTORE) {
+        RestoreScreen(vm, onDone = { nav.popIfAt(VaultDest.RESTORE) }, onBack = { nav.popIfAt(VaultDest.RESTORE) })
     }
     composable(VaultDest.ADD) {
         AddAccountScreen(

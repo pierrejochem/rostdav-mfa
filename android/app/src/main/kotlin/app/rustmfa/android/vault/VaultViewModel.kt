@@ -1,5 +1,6 @@
 package app.rustmfa.android.vault
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.rustmfa.android.R
@@ -11,6 +12,11 @@ import app.rustmfa.vault.VaultKeyLostException
 import app.rustmfa.vault.VaultLockedException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -49,11 +55,13 @@ class VaultViewModel(
     private val clock: () -> Long,
     private val clipboard: ClipboardWriter,
     private val prefs: VaultPrefs,
-    // the backup screen uses it
-    @Suppress("unused") private val files: BackupFiles,
+    /** Reads the backup file for the restore over an unreadable vault. */
+    private val files: BackupFiles,
     private val appScope: CoroutineScope,
     ticker: Flow<Long> = secondTicker(clock),
     private val delayer: Delayer = Delayer { delay(it) },
+    /** The restore over a vault that cannot be opened; the restore screen shows its state. */
+    val restore: RestoreFlow = RestoreFlow(gateway),
 ) : ViewModel() {
     private val _state = MutableStateFlow<VaultUiState>(VaultUiState.Loading)
     val state: StateFlow<VaultUiState> = _state.asStateFlow()
@@ -65,6 +73,9 @@ class VaultViewModel(
     val showNudge: StateFlow<Boolean> = _showNudge.asStateFlow()
 
     private val hotpCodes = mutableMapOf<String, String>()
+
+    /** The prompt this view model is showing, so a reset can dismiss it first (a reset waits for an open prompt). */
+    private var unlocking: Deferred<Unit>? = null
 
     /** False between [appLeft] and [appReturned]: the ticker does not wake the app in the background. */
     private val foreground = MutableStateFlow(true)
@@ -202,6 +213,66 @@ class VaultViewModel(
         }
     }
 
+    /**
+     * "Start a new vault" after the confirm: dismisses a prompt that is still open, deletes the unreadable vault and
+     * shows [VaultUiState.NoVault] (the next add creates the new one). A failed reset stays at
+     * [VaultUiState.NeedsReset] with a message.
+     */
+    fun startNewVault() {
+        launchSafely {
+            cancelUnlock()
+            try {
+                gateway.reset()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _events.emit(VaultEvent.Failed(R.string.vault_new_failed))
+                reload()
+                return@launchSafely
+            }
+            hotpCodes.clear()
+            reload()
+        }
+    }
+
+    /** Reads [source] (capped at [MAX_BACKUP_BYTES]) and decrypts it; the vault is not touched. Zeroes [passphrase]. */
+    fun restoreStart(source: Uri, passphrase: CharArray) {
+        launchSafely { restore.start({ files.read(source, MAX_BACKUP_BYTES) }, passphrase) }
+    }
+
+    /** After the confirm: dismisses an open prompt, then reset, prompt and import (see [RestoreFlow]). */
+    fun restoreConfirm() {
+        launchSafely {
+            try {
+                cancelUnlock()
+                restore.confirmReplace()
+            } finally {
+                hotpCodes.clear()
+                reload()
+            }
+        }
+    }
+
+    /** "Finish restoring": the prompt and the import of the kept list. */
+    fun restoreFinish() {
+        launchSafely {
+            try {
+                restore.finish()
+            } finally {
+                reload()
+            }
+        }
+    }
+
+    /** Drops the decrypted list (its secrets are zeroed). */
+    fun restoreAbandon() {
+        restore.abandon()
+    }
+
+    override fun onCleared() {
+        restore.abandon()
+    }
+
     fun dismissNudge() {
         prefs.nudgeHiddenUntil = clock() + NUDGE_HIDE_MILLIS
         updateNudge()
@@ -234,7 +305,7 @@ class VaultViewModel(
     /** False when the vault stays closed; a cancelled prompt emits [VaultEvent.UnlockToSave] only [forSave]. */
     private suspend fun tryUnlock(forSave: Boolean): Boolean =
         try {
-            gateway.unlock()
+            promptUnlock()
             true
         } catch (e: VaultAuthRequiredException) {
             if (forSave) _events.emit(VaultEvent.UnlockToSave)
@@ -246,6 +317,30 @@ class VaultViewModel(
             setState(VaultUiState.NeedsReset)
             false
         }
+
+    /**
+     * Runs the gateway's unlock as a job [cancelUnlock] can stop (which dismisses the prompt). A prompt stopped that
+     * way counts as cancelled ([VaultAuthRequiredException]); when the caller itself is cancelled, so is the prompt.
+     */
+    private suspend fun promptUnlock() {
+        val job = viewModelScope.async { gateway.unlock() }
+        unlocking = job
+        try {
+            job.await()
+        } catch (e: CancellationException) {
+            if (!currentCoroutineContext().isActive) {
+                job.cancel()
+                throw e
+            }
+            throw VaultAuthRequiredException()
+        } finally {
+            if (unlocking === job) unlocking = null
+        }
+    }
+
+    private suspend fun cancelUnlock() {
+        unlocking?.cancelAndJoin()
+    }
 
     private suspend fun reload() {
         val next = when {

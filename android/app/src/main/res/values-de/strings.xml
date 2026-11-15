@@ -183,4 +183,17 @@
     <string name="backup_error_decrypt">Falsche Passphrase oder beschädigte Datei.</string>
     <string name="backup_error_memory">Nicht genug Arbeitsspeicher für die Sicherung. Schließe andere Apps und versuche es erneut.</string>
     <string name="backup_error_file">Die Datei konnte nicht gelesen oder geschrieben werden.</string>
+    <string name="vault_new_failed">Der Tresor konnte nicht gelöscht werden. Versuche es noch einmal.</string>
+    <string name="restore_text">Wähle die Sicherungsdatei und gib ihre Passphrase ein. Der unlesbare Tresor wird erst ersetzt, wenn du bestätigst.</string>
+    <string name="restore_working">Wiederherstellung läuft</string>
+    <string name="restore_confirm_text">Das ersetzt den unlesbaren Tresor</string>
+    <string name="restore_replace">Ersetzen</string>
+    <string name="restore_finish_text">Der unlesbare Tresor ist gelöscht. Entsperre, um die Konten aus der Sicherung in den neuen Tresor zu übernehmen.</string>
+    <string name="restore_finish">Wiederherstellung abschließen</string>
+    <string name="restore_done_button">Zurück zur Übersicht</string>
+    <string name="restore_abandon_title">Wiederherstellung beenden?</string>
+    <string name="restore_abandon_text">Die Konten aus der Sicherung werden aus dem Speicher verworfen. Die Sicherungsdatei bleibt, du kannst sie erneut wiederherstellen.</string>
+    <string name="restore_abandon_confirm">Verwerfen</string>
+    <string name="vault_new_text">Das löscht den unlesbaren Tresor endgültig</string>
+    <string name="vault_new_confirm">Löschen und neu anlegen</string>
 </resources>

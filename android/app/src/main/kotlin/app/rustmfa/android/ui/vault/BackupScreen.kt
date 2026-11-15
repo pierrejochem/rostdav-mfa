@@ -61,7 +61,7 @@ import app.rustmfa.android.vault.PassphraseProblem
 import app.rustmfa.android.vault.backupFileName
 import app.rustmfa.android.vault.passphraseProblem
 
-private val BACKUP_TYPES = arrayOf("application/json", "*/*")
+internal val BACKUP_TYPES = arrayOf("application/json", "*/*")
 
 /**
  * The Backup screen with the system file pickers: Create opens `CreateDocument` with [backupFileName], Restore
@@ -243,7 +243,7 @@ private fun Status(state: BackupState) {
 }
 
 @Composable
-private fun RestorePassphraseDialog(onRestore: (CharArray) -> Unit, onDismiss: () -> Unit) {
+internal fun RestorePassphraseDialog(onRestore: (CharArray) -> Unit, onDismiss: () -> Unit) {
     var passphrase by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
