@@ -2,7 +2,7 @@
 """Rewrite brand/logo/wordmark.svg, lockup-light.svg and lockup-dark.svg with the text outlined.
 
 Needs fontTools (a development tool, not a CI dependency):
-    python3 brand/logo/make_wordmark.py --font android/app/src/main/res/font/inter_semibold.ttf
+    python3 brand/logo/make_wordmark.py --font android/app/src/main/res/font/space_grotesk_bold.ttf
 """
 import argparse
 import re
@@ -25,7 +25,7 @@ def outline(font_path, text, accent_from):
         name = cmap[ord(ch)]
         pen = SVGPathPen(glyphs)
         glyphs[name].draw(pen)
-        parts.append((i >= accent_from, x, pen.getCommands()))
+        parts.append((accent_from <= i < accent_from + 3, x, pen.getCommands()))
         x += hmtx[name][0] * scale + SPACING
     return parts, x - SPACING, scale
 
@@ -46,11 +46,11 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--font", required=True)
     args = p.parse_args()
-    parts, width, scale = outline(args.font, "rostdav-mfa", accent_from=7)
+    parts, width, scale = outline(args.font, "rostdav-mfa", accent_from=4)
     baseline = 50.0
-    mark = (HERE / "mark.svg").read_text()
+    mark = (HERE / "icon.svg").read_text()
     defs = re.search(r"<defs>.*?</defs>\n", mark, re.S).group(0)
-    art = re.search(r'(<rect width="512".*?)</svg>', mark, re.S).group(1)
+    art = re.search(r'(<rect width="512".*?)\n</svg>', mark, re.S).group(1) + "\n"
 
     def svg(title, w, h, body, with_defs=False):
         return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" role="img">\n'
@@ -58,12 +58,12 @@ def main():
 
     wm_w = int(width) + 4
     (HERE / "wordmark.svg").write_text(
-        svg("rostdav-mfa", wm_w, 72, group(parts, scale, "#1B2A41", "#E26A2E", baseline) + "\n"))
-    for name, ink, accent, title in (("light", "#1B2A41", "#E26A2E", "rostdav-mfa lockup, light"),
-                                     ("dark", "#F4ECE6", "#FF9A66", "rostdav-mfa lockup, dark")):
+        svg("rostdav-mfa", wm_w, 72, group(parts, scale, "#15171C", "#C2491D", baseline) + "\n"))
+    for name, ink, accent, title in (("light", "#15171C", "#C2491D", "rostdav-mfa lockup, light"),
+                                     ("dark", "#F4ECE6", "#E8783A", "rostdav-mfa lockup, dark")):
         body = ('<g transform="scale(0.1875)">\n%s</g>\n<g transform="translate(112 12)">\n%s\n</g>\n'
                 % (art, group(parts, scale, ink, accent, baseline)))
-        (HERE / ("lockup-%s.svg" % name)).write_text(svg(title, 112 + wm_w, 96, body, with_defs=True))
+        (HERE / ("lockup-%s.svg" % name)).write_text(svg(title, 112 + wm_w + 12, 96, body, with_defs=True))
 
 
 if __name__ == "__main__":

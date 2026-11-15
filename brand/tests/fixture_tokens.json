@@ -1,17 +1,49 @@
 {
   "colors": {
     "light": {
-      "rost500": "#E26A2E", "rost600": "#BC501C", "rost700": "#8F3A12", "onRost": "#FFFFFF",
-      "ink": "#1B2A41", "slate": "#5B6B80", "paper": "#FAF6F1", "surface": "#FFFFFF",
-      "ok": "#2E7D4F", "danger": "#B3261E"
+      "rost500": "#E26A2E",
+      "rost600": "#BC501C",
+      "rost700": "#8F3A12",
+      "onRost": "#FFFFFF",
+      "ink": "#1B2A41",
+      "slate": "#5B6B80",
+      "paper": "#FAF6F1",
+      "surface": "#FFFFFF",
+      "ok": "#2E7D4F",
+      "danger": "#B3261E"
     },
     "dark": {
-      "rost500": "#FF9A66", "rost600": "#FFB68A", "rost700": "#FFD2B8", "onRost": "#3A1500",
-      "ink": "#F4ECE6", "slate": "#B9ADA5", "paper": "#171210", "surface": "#221A16",
-      "ok": "#6FCF97", "danger": "#F2B8B5"
+      "rost500": "#FF9A66",
+      "rost600": "#FFB68A",
+      "rost700": "#FFD2B8",
+      "onRost": "#3A1500",
+      "ink": "#F4ECE6",
+      "slate": "#B9ADA5",
+      "paper": "#171210",
+      "surface": "#221A16",
+      "ok": "#6FCF97",
+      "danger": "#F2B8B5"
     }
   },
-  "gradient": { "markStart": "#E8743B", "markEnd": "#C4561F" },
-  "type": { "sizes": { "headline": 28, "title": 20, "body": 16, "label": 14, "caption": 12 } },
-  "radius": { "chip": 12, "card": 20, "sheet": 28, "button": 16 }
+  "gradient": {
+    "markStart": "#E8743B",
+    "markEnd": "#C4561F",
+    "iconStart": "#2A2D35",
+    "iconEnd": "#15171C"
+  },
+  "type": {
+    "sizes": {
+      "headline": 28,
+      "title": 20,
+      "body": 16,
+      "label": 14,
+      "caption": 12
+    }
+  },
+  "radius": {
+    "chip": 12,
+    "card": 20,
+    "sheet": 28,
+    "button": 16
+  }
 }

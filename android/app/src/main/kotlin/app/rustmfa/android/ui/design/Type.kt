@@ -5,13 +5,16 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import app.rustmfa.android.R
 
-val InterFamily: FontFamily =
+/** Space Grotesk, the face of the Rostdav web UI and wordmark. */
+val TextFamily: FontFamily =
     FontFamily(
-        Font(R.font.inter_regular, FontWeight.Normal),
-        Font(R.font.inter_medium, FontWeight.Medium),
-        Font(R.font.inter_semibold, FontWeight.SemiBold),
+        Font(R.font.space_grotesk_regular, FontWeight.Normal),
+        Font(R.font.space_grotesk_medium, FontWeight.Medium),
+        Font(R.font.space_grotesk_semibold, FontWeight.SemiBold),
+        Font(R.font.space_grotesk_bold, FontWeight.Bold),
     )
 
 /** One-time codes and the number-match digits: tabular figures so the digits do not jump. */
@@ -20,10 +23,14 @@ val MonoFamily: FontFamily = FontFamily(Font(R.font.jetbrains_mono_medium, FontW
 val CodeStyle: TextStyle =
     TextStyle(fontFamily = MonoFamily, fontWeight = FontWeight.Medium, fontSize = Tokens.sizeHeadline, fontFeatureSettings = "tnum")
 
-/** Inter everywhere; the scale is 28, 20, 16, 14, 12 from the tokens. */
+/** Small uppercase mono label above a section, as in the Rostdav web UI. */
+val EyebrowStyle: TextStyle =
+    TextStyle(fontFamily = MonoFamily, fontWeight = FontWeight.Medium, fontSize = Tokens.sizeCaption, letterSpacing = 2.sp)
+
+/** Space Grotesk everywhere; the scale is 28, 20, 16, 14, 12 from the tokens. */
 fun rostdavTypography(): Typography {
     val d = Typography()
-    fun TextStyle.inter(weight: FontWeight = FontWeight.Normal) = copy(fontFamily = InterFamily, fontWeight = weight)
+    fun TextStyle.inter(weight: FontWeight = FontWeight.Normal) = copy(fontFamily = TextFamily, fontWeight = weight)
     return Typography(
         displayLarge = d.displayLarge.inter(),
         displayMedium = d.displayMedium.inter(),

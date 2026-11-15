@@ -16,7 +16,7 @@ DEFAULT_KOTLIN = ROOT / "android/app/src/main/kotlin/app/rustmfa/android/ui/desi
 DEFAULT_CSS = ROOT / "site" / "tokens.css"
 
 COLOR_KEYS = ["rost500", "rost600", "rost700", "onRost", "ink", "slate", "paper", "surface", "ok", "danger"]
-GRADIENT_KEYS = ["markStart", "markEnd"]
+GRADIENT_KEYS = ["markStart", "markEnd", "iconStart", "iconEnd"]
 SIZE_KEYS = ["headline", "title", "body", "label", "caption"]
 RADIUS_KEYS = ["chip", "card", "sheet", "button"]
 HEX = re.compile(r"^#[0-9A-Fa-f]{6}$")

@@ -9,35 +9,37 @@ import androidx.compose.ui.unit.sp
 
 object Tokens {
     object Light {
-        val rost500 = Color(0xFFE26A2E)
-        val rost600 = Color(0xFFBC501C)
-        val rost700 = Color(0xFF8F3A12)
+        val rost500 = Color(0xFFC2491D)
+        val rost600 = Color(0xFFB8441A)
+        val rost700 = Color(0xFF7A2A12)
         val onRost = Color(0xFFFFFFFF)
-        val ink = Color(0xFF1B2A41)
-        val slate = Color(0xFF5B6B80)
-        val paper = Color(0xFFFAF6F1)
+        val ink = Color(0xFF15171C)
+        val slate = Color(0xFF4F4842)
+        val paper = Color(0xFFF4EFE8)
         val surface = Color(0xFFFFFFFF)
-        val ok = Color(0xFF2E7D4F)
+        val ok = Color(0xFF1F5F5A)
         val danger = Color(0xFFB3261E)
     }
     object Dark {
-        val rost500 = Color(0xFFFF9A66)
-        val rost600 = Color(0xFFFFB68A)
-        val rost700 = Color(0xFFFFD2B8)
-        val onRost = Color(0xFF3A1500)
-        val ink = Color(0xFFF4ECE6)
-        val slate = Color(0xFFB9ADA5)
-        val paper = Color(0xFF171210)
-        val surface = Color(0xFF221A16)
-        val ok = Color(0xFF6FCF97)
+        val rost500 = Color(0xFFE8783A)
+        val rost600 = Color(0xFFF2A65A)
+        val rost700 = Color(0xFFF7C589)
+        val onRost = Color(0xFF15171C)
+        val ink = Color(0xFFF4EFE8)
+        val slate = Color(0xFFC2BAB1)
+        val paper = Color(0xFF0B0C10)
+        val surface = Color(0xFF1B1D24)
+        val ok = Color(0xFF6CC7BA)
         val danger = Color(0xFFF2B8B5)
     }
-    val markStart = Color(0xFFE8743B)
-    val markEnd = Color(0xFFC4561F)
+    val markStart = Color(0xFFE8783A)
+    val markEnd = Color(0xFFC2491D)
+    val iconStart = Color(0xFF2A2D35)
+    val iconEnd = Color(0xFF15171C)
     val radiusChip: Dp = 12.dp
-    val radiusCard: Dp = 20.dp
-    val radiusSheet: Dp = 28.dp
-    val radiusButton: Dp = 16.dp
+    val radiusCard: Dp = 16.dp
+    val radiusSheet: Dp = 24.dp
+    val radiusButton: Dp = 12.dp
     val sizeHeadline: TextUnit = 28.sp
     val sizeTitle: TextUnit = 20.sp
     val sizeBody: TextUnit = 16.sp
