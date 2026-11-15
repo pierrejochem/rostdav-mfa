@@ -1,38 +1,46 @@
 package app.rustmfa.android.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import app.rustmfa.android.ui.design.Tokens
+import app.rustmfa.android.ui.design.rostdavTypography
 
-/** The Rost accent, #D2691E. */
-val Rost = Color(0xFFD2691E)
-
-private val Light =
+internal fun lightScheme(): ColorScheme =
     lightColorScheme(
-        primary = Color(0xFF9C4A0C),
-        onPrimary = Color.White,
-        primaryContainer = Color(0xFFFFDBC4),
-        onPrimaryContainer = Color(0xFF331200),
-        secondary = Rost,
-        background = Color(0xFFFFFBF8),
-        surface = Color(0xFFFFFBF8),
+        primary = Tokens.Light.rost600,
+        onPrimary = Tokens.Light.onRost,
+        primaryContainer = lerp(Tokens.Light.paper, Tokens.Light.rost500, 0.12f),
+        onPrimaryContainer = Tokens.Light.rost700,
+        secondary = Tokens.Light.rost500,
+        background = Tokens.Light.paper,
+        onBackground = Tokens.Light.ink,
+        surface = Tokens.Light.surface,
+        onSurface = Tokens.Light.ink,
+        onSurfaceVariant = Tokens.Light.slate,
+        error = Tokens.Light.danger,
     )
 
-private val Dark =
+internal fun darkScheme(): ColorScheme =
     darkColorScheme(
-        primary = Color(0xFFFFB68A),
-        onPrimary = Color(0xFF532200),
-        primaryContainer = Color(0xFF773300),
-        onPrimaryContainer = Color(0xFFFFDBC4),
-        secondary = Rost,
-        background = Color(0xFF1C1411),
-        surface = Color(0xFF1C1411),
+        primary = Tokens.Dark.rost600,
+        onPrimary = Tokens.Dark.onRost,
+        primaryContainer = lerp(Tokens.Dark.paper, Tokens.Dark.rost500, 0.12f),
+        onPrimaryContainer = Tokens.Dark.rost700,
+        secondary = Tokens.Dark.rost500,
+        background = Tokens.Dark.paper,
+        onBackground = Tokens.Dark.ink,
+        surface = Tokens.Dark.surface,
+        onSurface = Tokens.Dark.ink,
+        onSurfaceVariant = Tokens.Dark.slate,
+        error = Tokens.Dark.danger,
     )
 
 @Composable
 fun RustMfaTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (dark) Dark else Light, content = content)
+    MaterialTheme(colorScheme = if (dark) darkScheme() else lightScheme(), typography = rostdavTypography(), content = content)
 }
