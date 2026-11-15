@@ -13,7 +13,8 @@ import javax.crypto.AEADBadTagException
  * guarded by a private monitor: [lock], taking the key for use in [save], and installing a key in [load] all
  * happen under it, so [lock] never zeroes a key mid-encryption. [load] captures the generation before its first
  * suspension; if [lock] ran meanwhile, the freshly obtained key is zeroed and [VaultLockedException] is thrown,
- * so the store never ends up unlocked after [lock] returned.
+ * so the store never ends up unlocked after [lock] returned. Loads are serialised by a private mutex that
+ * [lock] and [reset] do not take; a load that waited for it while [lock] ran fails the same way.
  */
 class EncryptedSeedStore(
     private val keyWrapper: KeyWrapper,
@@ -27,8 +28,17 @@ class EncryptedSeedStore(
     // Orders blob writes against reset's clear: held around a save's generation re-check plus write, and around clear.
     private val blobLock = Mutex()
 
+    // Serialises loads, so two first-run loads cannot both create a key (the second would replace the first's
+    // wrapped key while the first's data key stays in memory). reset() and lock() never take it: they must not
+    // wait for a load suspended in a prompt-gated unwrap.
+    private val loadLock = Mutex()
+
     override suspend fun load(): List<OtpAccount> {
         val gen = synchronized(monitor) { generation }
+        return loadLock.withLock { loadLocked(gen) }
+    }
+
+    private suspend fun loadLocked(gen: Long): List<OtpAccount> {
         val blob = blobStore.read()
         val hasKey = keyWrapper.hasKey()
         if (blob == null && !hasKey) {

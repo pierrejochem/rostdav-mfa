@@ -17,11 +17,15 @@ class FakeKeyWrapper(var authOpen: Boolean = true) : KeyWrapper {
     /** When set, [unwrap] suspends until it completes. */
     var unwrapGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
 
+    /** When set, [create] suspends on it after counting the call and before storing the key. */
+    var createGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
     override suspend fun hasKey(): Boolean = key != null
 
     override suspend fun create(dataKey: ByteArray) {
         createCalls++
         createdArg = dataKey
+        createGate?.await()
         if (createThrows) throw IllegalStateException("create failed")
         if (!authOpen) throw VaultAuthRequiredException()
         key = dataKey.copyOf()

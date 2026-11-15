@@ -52,7 +52,8 @@ A UTF-8 JSON object:
 
 ## Unlock and session rules
 
-- `VaultRepository.unlock()` returns at once if the session is unlocked. Otherwise it calls the authenticator (the prompt, which opens the Keystore window for 10 seconds) and then `VaultSession.open()`, which calls `EncryptedSeedStore.load()`.
+- `VaultRepository.unlock()` returns at once if the session is unlocked. Otherwise it calls the authenticator (the prompt, which opens the Keystore window for 10 seconds) and then `VaultSession.open()`, which calls `EncryptedSeedStore.load()`. `unlock()` and `reset()` share a mutex: a second `unlock()` that waited behind the first finds the session open and does not prompt, and a `reset()` never runs between an unlock's load and its install (that would leave the session open under a key reset had destroyed). `lock()` does not take it.
+- `EncryptedSeedStore.load()` calls are serialised by a private mutex, so two first-run loads on one store never both create a key. `lock()` and `reset()` do not take it and never wait for a load; a load in flight when they run fails with `VaultLockedException`.
 - `load()` on a first run (no blob, no wrapped key) makes a random data key and wraps it at once, while the window is open, and returns an empty list. With a wrapped key it unwraps it and decrypts the blob. A blob without a key raises `VaultKeyLostException`. A failed first-run wrap destroys the key again.
 - A closed window gives `VaultAuthRequiredException`. A key that the Keystore invalidated, or a wrapped key that fails its tag, gives `VaultKeyLostException`.
 - Auto-lock: `appLeft()` stores `SystemClock.elapsedRealtime()` when the session is unlocked. `appReturned()` locks the session if at least 60 000 ms passed since then, and does nothing if the app was not left. The clock is monotonic, so changing the wall clock does not keep the vault open.
@@ -83,7 +84,7 @@ These are obligations the reviews found for the code that will call the vault co
 
 - Call `BiometricUnlocker` on the main thread (`BiometricPrompt` requires it).
 - `AppContainer.authenticator` captures the Activity through `BiometricUnlocker`. Clear it (set it back to the throwing default) when the Activity goes away, or it leaks the Activity.
-- Serialise `unlock()` calls. Two concurrent callers on a locked vault can both show a prompt.
+- `VaultRepository` serialises `unlock()` and `reset()`, so overlapping unlocks (double tap, rotation) show one prompt. `reset()` therefore waits while an unlock prompt is showing: dismiss the prompt (or let it finish) before offering reset, and do not call `VaultSession.open()` or `reset()` directly, which bypasses that order.
 - Call `appLeft()` when the app goes to the background and `appReturned()` when it comes back, from the lifecycle. Without them the vault never auto-locks.
 - Nudge users to make a backup. Removing the lock screen destroys the vault, and a backup is the only way back.
 - Handle `VaultKeyLostException` and `VaultCorruptException`: `unlock()` fails with them on every attempt while the old blob stays, so the only way out is `VaultRepository.reset()`. Offer a restore from a backup or an empty new vault (confirm first, since reset deletes what is left). Both work the same way: call `reset()`, then `unlock()` (the user authenticates again; this creates the new key and an empty vault), then for a restore `VaultSession.import(VaultBackup.import(bytes, passphrase))`. Decrypt the backup before calling `reset()`, so a wrong passphrase does not cost the user the old state. Treat `VaultAuthRequiredException` as "the user cancelled or failed", not as an error to report.

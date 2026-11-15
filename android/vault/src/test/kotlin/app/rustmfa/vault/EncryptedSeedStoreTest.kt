@@ -217,6 +217,41 @@ class EncryptedSeedStoreTest {
     }
 
     @Test
+    fun twoConcurrentFirstRunLoadsCreateOneKeyAndSavesSurviveAReload() = runTest {
+        val s = store()
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        keys.createGate = gate
+        val first = async { s.load() }
+        val second = async { s.load() }
+        runCurrent()
+        gate.complete(Unit)
+        assertEquals(emptyList(), first.await())
+        assertEquals(emptyList(), second.await())
+        assertEquals(1, keys.createCalls)
+        keys.createGate = null
+        s.save(accounts)
+        assertEquals(accounts, store().load())
+    }
+
+    @Test
+    fun resetDoesNotWaitForALoadSuspendedInUnwrap() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        keys.unwrapGate = gate
+        val fresh = store()
+        val loading = async { runCatching { fresh.load() } }
+        runCurrent()
+        val resetJob = async { fresh.reset() }
+        runCurrent()
+        assertTrue(resetJob.isCompleted, "reset waited for a load suspended in unwrap")
+        fresh.lock()
+        gate.complete(Unit)
+        assertTrue(loading.await().exceptionOrNull() is VaultLockedException)
+    }
+
+    @Test
     fun resetWithNothingIsANoOp() = runTest {
         store().reset()
         assertNull(blobs.bytes)
