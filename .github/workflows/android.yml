@@ -21,7 +21,7 @@ jobs:
       # need a device and a Firebase file; see android/docs/e2e.md.
       - name: Test, lint and build
         working-directory: android
-        run: ./gradlew :contract:test :app:testNopushDebugUnitTest :app:lintNopushDebug :app:assembleNopushDebug
+        run: ./gradlew :contract:test :vault:test :app:testNopushDebugUnitTest :app:lintNopushDebug :app:assembleNopushDebug
 
   contract:
     runs-on: ubuntu-latest
