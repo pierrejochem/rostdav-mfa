@@ -44,6 +44,7 @@ androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camera" }
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camera" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camera" }
+androidx-fragment = { module = "androidx.fragment:fragment", version = "1.8.9" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version = "35.1.0" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }

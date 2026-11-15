@@ -28,7 +28,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -50,6 +50,12 @@ class MainActivity : FragmentActivity() {
 
     private val askNotifications =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { refreshNotificationState() }
+
+    /** A new task with no saved navigation state: after a wipe, no screen may come back for an enrollment that is gone. */
+    private fun restartFresh() {
+        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
+        finish()
+    }
 
     private fun refreshNotificationState() {
         notificationsOff.value = Build.VERSION.SDK_INT >= 33 &&
@@ -113,15 +119,16 @@ class MainActivity : FragmentActivity() {
         app.onSessionEnded = {
             runOnUiThread {
                 Toast.makeText(this, R.string.result_revoked, Toast.LENGTH_LONG).show()
-                recreate()
+                restartFresh()
             }
         }
         setContent {
             RustMfaTheme {
                 // null while the store is read; the start destination is chosen once
-                val loaded by produceState<Pair<Boolean, Enrollment?>?>(null) {
+                var loaded by remember { mutableStateOf<Pair<Boolean, Enrollment?>?>(null) }
+                LaunchedEffect(Unit) {
                     val e = try { app.store.load() } catch (_: Exception) { null }
-                    value = (e != null) to e
+                    loaded = (e != null) to e
                 }
                 loaded?.let { (enrolled, enrollment) ->
                     val nav = rememberNavController()
@@ -137,14 +144,14 @@ class MainActivity : FragmentActivity() {
                         nav = nav,
                         needsReconnect = enrollment?.needsReconnect == true,
                         reconnect = {
-                            ReconnectScreen(enrollment?.server ?: "") { app.resetEnrollment(); recreate() }
+                            ReconnectScreen(enrollment?.server ?: "") { app.resetEnrollment(); restartFresh() }
                         },
                         devices = {
                             val e = enrollment
                             if (e != null) {
                                 val vm: DevicesViewModel =
                                     viewModel(factory = viewModelFactory { initializer { DevicesViewModel(app.signedApi(e), e.deviceId, app.guard) } })
-                                DevicesScreen(vm, onThisPhoneRevoked = { recreate() })
+                                DevicesScreen(vm, onThisPhoneRevoked = { restartFresh() })
                             }
                         },
                         home = { onOpen ->
@@ -154,10 +161,15 @@ class MainActivity : FragmentActivity() {
                         server = enrollment?.server ?: "",
                         version = BuildConfig.VERSION_NAME,
                         onboarding = { onDone0 ->
-                            val onDone = {
+                            val onDone: () -> Unit = {
                                 // the new enrollment starts the session; the stored value is read again
-                                lifecycleScope.launch { runCatching { app.store.load() }.getOrNull()?.let { startSession(app, it) } }
-                                onDone0()
+                                // read the new enrollment: every screen needs the server and the device id from it
+                                lifecycleScope.launch {
+                                    val e = runCatching { app.store.load() }.getOrNull()
+                                    loaded = (e != null) to e
+                                    if (e != null) startSession(app, e)
+                                    onDone0()
+                                }
                             }
                             val vm: OnboardingViewModel =
                                 viewModel(factory = viewModelFactory { initializer { OnboardingViewModel(app.enrollmentRepository(), BuildConfig.DEBUG) } })
@@ -171,7 +183,7 @@ class MainActivity : FragmentActivity() {
                                 ApproveScreen(vm, onClose = onClose, onReconnect = { invalidated ->
                                     lifecycleScope.launch {
                                         if (invalidated) app.guard.onKeyInvalidated() else app.resetEnrollment()
-                                        recreate()
+                                        restartFresh()
                                     }
                                 })
                             }

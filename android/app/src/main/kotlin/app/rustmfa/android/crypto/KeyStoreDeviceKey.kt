@@ -1,6 +1,7 @@
 package app.rustmfa.android.crypto
 
 import android.content.Context
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
@@ -50,9 +51,18 @@ class KeyStoreDeviceKey(@Suppress("unused") private val context: Context) : Devi
     private fun approvalSpec(attestationChallenge: ByteArray) =
         spec(APPROVAL_ALIAS)
             .setUserAuthenticationRequired(true)
-            .setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)
+            .perUseBiometricAuth()
             .setInvalidatedByBiometricEnrollment(true)
             .setAttestationChallenge(attestationChallenge)
+
+    /** Every signature needs a fresh biometric. API 30 names the allowed types; before that, -1 means the same (fingerprint). */
+    private fun KeyGenParameterSpec.Builder.perUseBiometricAuth(): KeyGenParameterSpec.Builder =
+        if (Build.VERSION.SDK_INT >= 30) {
+            setUserAuthenticationParameters(0, KeyProperties.AUTH_BIOMETRIC_STRONG)
+        } else {
+            @Suppress("DEPRECATION")
+            setUserAuthenticationValidityDurationSeconds(-1)
+        }
 
     private fun generate(spec: KeyGenParameterSpec) {
         KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_EC, ANDROID_KEYSTORE).apply {
