@@ -255,6 +255,50 @@ class EncryptedSeedStoreTest {
         assertEquals(1, e.suppressed.size)
     }
 
+    @Test
+    fun resetDuringInProgressWriteLeavesNoBlobAndFirstUseWorks() = runTest {
+        val s = store()
+        s.load()
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        blobs.writeGate = gate
+        val saver = async { runCatching { s.save(accounts) } }
+        runCurrent()
+        val resetJob = async { s.reset() }
+        runCurrent()
+        assertTrue(resetJob.isActive) // waits for the write already inside the blob store
+        gate.complete(Unit)
+        runCurrent()
+        resetJob.await()
+        saver.await()
+        assertNull(blobs.bytes)
+        assertFalse(keys.hasKey())
+        blobs.writeGate = null
+        assertEquals(emptyList(), s.load())
+    }
+
+    @Test
+    fun saveEncryptedButNotYetWritingWhenResetRunsDoesNotWrite() = runTest {
+        val s = store()
+        s.load()
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        blobs.writeGate = gate
+        val first = async { runCatching { s.save(accounts) } } // holds the write lock inside write
+        runCurrent()
+        val second = async { runCatching { s.save(accounts) } } // encrypted, queued on the write lock
+        runCurrent()
+        val resetJob = async { s.reset() } // bumps the generation, queues behind the second save
+        runCurrent()
+        gate.complete(Unit)
+        runCurrent()
+        resetJob.await()
+        assertTrue(first.await().isSuccess)
+        assertTrue(second.await().exceptionOrNull() is VaultLockedException)
+        assertEquals(1, blobs.writes)
+        assertNull(blobs.bytes)
+        blobs.writeGate = null
+        assertEquals(emptyList(), s.load())
+    }
+
     private fun assertZero(a: ByteArray) = assertTrue(a.all { it == 0.toByte() }, "key array not zeroed")
 
     @Test

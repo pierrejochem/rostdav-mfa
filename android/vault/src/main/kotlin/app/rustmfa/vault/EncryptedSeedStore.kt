@@ -1,5 +1,7 @@
 package app.rustmfa.vault
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.security.SecureRandom
 import javax.crypto.AEADBadTagException
 
@@ -21,6 +23,9 @@ class EncryptedSeedStore(
     private val monitor = Any()
     private var dataKey: ByteArray? = null
     private var generation = 0L
+
+    // Orders blob writes against reset's clear: held around a save's generation re-check plus write, and around clear.
+    private val blobLock = Mutex()
 
     override suspend fun load(): List<OtpAccount> {
         val gen = synchronized(monitor) { generation }
@@ -64,16 +69,22 @@ class EncryptedSeedStore(
         val nonce = ByteArray(NONCE_SIZE)
         random.nextBytes(nonce)
         val plain = VaultAccountsJson.encode(accounts)
+        var gen = 0L
         val blob = try {
             // Non-suspending, so the monitor is held for the whole use of the key.
             synchronized(monitor) {
                 val key = dataKey ?: throw VaultLockedException()
+                gen = generation
                 MAGIC + nonce + VaultCipher.encrypt(key, nonce, MAGIC, plain)
             }
         } finally {
             plain.fill(0)
         }
-        blobStore.write(blob)
+        blobLock.withLock {
+            // A reset (or lock) since the key was taken must not be followed by a stale write.
+            if (synchronized(monitor) { generation } != gen) throw VaultLockedException()
+            blobStore.write(blob)
+        }
     }
 
     override fun lock() {
@@ -89,7 +100,7 @@ class EncryptedSeedStore(
         lock()
         var failure: Throwable? = null
         try {
-            blobStore.clear()
+            blobLock.withLock { blobStore.clear() }
         } catch (e: Throwable) {
             failure = e
         }

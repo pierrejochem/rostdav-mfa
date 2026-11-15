@@ -49,9 +49,13 @@ class MemoryBlobStore : BlobStore {
     var writes = 0
     var clearThrows = false
 
+    /** When set, [write] suspends on it before storing. */
+    var writeGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
     override suspend fun read(): ByteArray? = bytes?.copyOf()
 
     override suspend fun write(bytes: ByteArray) {
+        writeGate?.await()
         writes++
         this.bytes = bytes.copyOf()
     }

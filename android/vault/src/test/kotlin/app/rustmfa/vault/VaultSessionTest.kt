@@ -268,6 +268,29 @@ class VaultSessionTest {
     }
 
     @Test
+    fun resetDuringRealStoreWriteLeavesNothingBehind() = runTest {
+        val keys = FakeKeyWrapper()
+        val blobs = MemoryBlobStore()
+        val s = VaultSession(EncryptedSeedStore(keys, blobs), { now }, newId = { "id${ids++}" })
+        s.open()
+        val gate = CompletableDeferred<Unit>()
+        blobs.writeGate = gate
+        val job = async { runCatching { s.add(totp) } }
+        runCurrent()
+        val resetJob = async { s.reset() }
+        runCurrent()
+        gate.complete(Unit)
+        runCurrent()
+        resetJob.await()
+        assertTrue(job.await().exceptionOrNull() is VaultLockedException)
+        assertEquals(null, blobs.bytes)
+        assertFalse(keys.hasKey())
+        blobs.writeGate = null
+        s.open()
+        assertEquals(emptyList(), s.accounts())
+    }
+
+    @Test
     fun restoreFlowAfterKeyLost() = runTest {
         var lost = true
         val inner = FakeSeedStore()
