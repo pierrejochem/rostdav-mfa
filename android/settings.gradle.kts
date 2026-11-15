@@ -21,4 +21,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "rustmfa-android"
-include(":contract", ":app")
+include(":contract", ":vault", ":app")

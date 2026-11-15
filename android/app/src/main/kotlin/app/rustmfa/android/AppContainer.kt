@@ -13,6 +13,13 @@ import app.rustmfa.android.domain.Delayer
 import app.rustmfa.android.enroll.Enrollment
 import app.rustmfa.android.net.ClockSkew
 import app.rustmfa.android.net.RequestSigner
+import android.os.SystemClock
+import app.rustmfa.android.vault.DataStoreBlobStore
+import app.rustmfa.android.vault.KeystoreKeyWrapper
+import app.rustmfa.android.vault.VaultRepository
+import app.rustmfa.vault.EncryptedSeedStore
+import app.rustmfa.vault.VaultAuthRequiredException
+import app.rustmfa.vault.VaultSession
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -41,6 +48,19 @@ class AppContainer private constructor(private val context: Context) {
     fun notifier(e: Enrollment): ChallengeNotifier =
         notifierFor?.takeIf { it.first == e.deviceId }?.second
             ?: ChallengeNotifier(signedApi(e), sink, skew).also { notifierFor = e.deviceId to it }
+
+    /** Set by the UI when it has an activity; until then an unlock fails with [VaultAuthRequiredException]. */
+    @Volatile var authenticator: suspend () -> Unit = { throw VaultAuthRequiredException() }
+
+    /** The auto-lock clock is monotonic, so changing the wall clock cannot keep the vault open. */
+    val vault: VaultRepository by lazy {
+        VaultRepository(
+            VaultSession(
+                EncryptedSeedStore(KeystoreKeyWrapper(context), DataStoreBlobStore(context, "vault")),
+                SystemClock::elapsedRealtime,
+            ),
+        ) { authenticator() }
+    }
 
     fun poller(e: Enrollment) = PendingPoller(signedApi(e), skew, Delayer { delay(it) })
 
