@@ -14,7 +14,9 @@ import app.rustmfa.android.enroll.Enrollment
 import app.rustmfa.android.net.ClockSkew
 import app.rustmfa.android.net.RequestSigner
 import android.os.SystemClock
+import app.rustmfa.android.vault.AndroidBackupFiles
 import app.rustmfa.android.vault.AndroidClipboardWriter
+import app.rustmfa.android.vault.BackupFiles
 import app.rustmfa.android.vault.AndroidVaultPrefs
 import app.rustmfa.android.vault.ClipboardWriter
 import app.rustmfa.android.vault.DataStoreBlobStore
@@ -68,6 +70,8 @@ class AppContainer private constructor(private val context: Context) {
     val clipboard: ClipboardWriter by lazy { AndroidClipboardWriter(context) }
 
     val vaultPrefs: VaultPrefs by lazy { AndroidVaultPrefs(context) }
+
+    val backupFiles: BackupFiles by lazy { AndroidBackupFiles(context.contentResolver) }
 
     /** The auto-lock clock is monotonic, so changing the wall clock cannot keep the vault open. */
     val vault: VaultRepository by lazy {

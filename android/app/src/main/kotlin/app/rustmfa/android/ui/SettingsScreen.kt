@@ -1,5 +1,6 @@
 package app.rustmfa.android.ui
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,9 +19,19 @@ import app.rustmfa.android.ui.design.ListCard
 import app.rustmfa.android.ui.design.ListRow
 import app.rustmfa.android.ui.design.brandWash
 import app.rustmfa.android.ui.design.screenPadding
+import java.text.DateFormat
+import java.util.Date
+
+/** The Backup row's subtitle: `Last backup: <date>` (local date, medium style) or `No backup yet`. */
+fun backupSubtitle(context: Context, lastBackupAt: Long?): String =
+    if (lastBackupAt == null) {
+        context.getString(R.string.settings_backup_none)
+    } else {
+        context.getString(R.string.settings_backup_last, DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(lastBackupAt)))
+    }
 
 @Composable
-fun SettingsScreen(server: String, version: String, onOpenDevices: () -> Unit) {
+fun SettingsScreen(server: String, version: String, onOpenDevices: () -> Unit, onOpenBackup: () -> Unit, backupSubtitle: String) {
     Column(
         Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).screenPadding(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -31,6 +42,7 @@ fun SettingsScreen(server: String, version: String, onOpenDevices: () -> Unit) {
         }
         ListCard {
             ListRow(stringResource(R.string.settings_devices), subtitle = stringResource(R.string.settings_devices_hint), trailing = "›", onClick = onOpenDevices)
+            ListRow(stringResource(R.string.settings_backup), subtitle = backupSubtitle, trailing = "›", onClick = onOpenBackup)
             ListRow(stringResource(R.string.settings_server), trailing = server)
             ListRow(stringResource(R.string.settings_version, version))
         }
@@ -39,4 +51,4 @@ fun SettingsScreen(server: String, version: String, onOpenDevices: () -> Unit) {
 
 @LightDarkPreview
 @Composable
-private fun SettingsPreview() = RustMfaTheme { SettingsScreen("https://rostdav.example", "0.1.0", {}) }
+private fun SettingsPreview() = RustMfaTheme { SettingsScreen("https://rostdav.example", "0.1.0", {}, {}, "No backup yet") }

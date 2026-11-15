@@ -51,13 +51,13 @@ import app.rustmfa.android.ui.vault.AccountsSection
 import app.rustmfa.android.ui.vault.SecureWhile
 import app.rustmfa.android.ui.vault.VaultDest
 import app.rustmfa.android.ui.vault.vaultGraph
-import app.rustmfa.android.vault.BackupFiles
+import app.rustmfa.android.vault.BackupViewModel
+import app.rustmfa.android.ui.backupSubtitle
 import app.rustmfa.android.vault.BiometricUnlocker
 import app.rustmfa.android.vault.VaultEvent
 import app.rustmfa.android.vault.toastMessage
 import app.rustmfa.android.vault.VaultUiState
 import app.rustmfa.android.vault.VaultViewModel
-import android.net.Uri
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.Dispatchers
@@ -78,7 +78,7 @@ class MainActivity : FragmentActivity() {
             initializer {
                 val app = AppContainer.get(applicationContext)
                 // the session's auto-lock is on the monotonic clock (AppContainer); codes and prefs need wall time
-                VaultViewModel(app.vault, System::currentTimeMillis, app.clipboard, app.vaultPrefs, NoBackupFiles, app.appScope)
+                VaultViewModel(app.vault, System::currentTimeMillis, app.clipboard, app.vaultPrefs, app.backupFiles, app.appScope)
             }
         }
     }
@@ -200,6 +200,9 @@ class MainActivity : FragmentActivity() {
                     val nav = rememberNavController()
                     val scope = rememberCoroutineScope()
                     var opening by remember { mutableStateOf(false) }
+                    val backupFactory = remember {
+                        viewModelFactory { initializer { BackupViewModel(app.vault, app.backupFiles, app.vaultPrefs, System::currentTimeMillis) } }
+                    }
                     // unlock first (the prompt creates the vault on first use); a cancelled prompt stays here
                     val openAdd: () -> Unit = {
                         if (!opening) {
@@ -255,7 +258,7 @@ class MainActivity : FragmentActivity() {
                                     onCopy = vault::copy,
                                     onGenerate = vault::generateHotp,
                                     onOpenMenu = { menuId = it },
-                                    onBackup = {}, // the Backup screen (task 6)
+                                    onBackup = { nav.navigate(Dest.backup()) { launchSingleTop = true } },
                                     onDismissNudge = vault::dismissNudge,
                                     onRestore = {}, // the cannot-be-opened flow (task 7)
                                     onNewVault = {}, // the cannot-be-opened flow (task 7)
@@ -265,7 +268,8 @@ class MainActivity : FragmentActivity() {
                         requests = { onOpen -> RequestsScreen(pendingList.value, onOpen) },
                         enrolled = enrolled,
                         pendingCount = pendingList.value.size,
-                        vaultGraph = { n -> vaultGraph(n, vault) },
+                        vaultGraph = { n -> vaultGraph(n, vault, backupFactory) },
+                        backupSubtitle = { backupSubtitle(this@MainActivity, app.vaultPrefs.lastBackupAt) },
                         server = enrollment?.server ?: "",
                         version = BuildConfig.VERSION_NAME,
                         onboarding = { onDone0 ->
@@ -306,11 +310,4 @@ class MainActivity : FragmentActivity() {
             }
         }
     }
-}
-
-/** Backup and restore arrive with the Backup screen; nothing calls these yet. */
-private object NoBackupFiles : BackupFiles {
-    override suspend fun read(uri: Uri, maxBytes: Int): ByteArray = throw UnsupportedOperationException("no backup screen yet")
-
-    override suspend fun write(uri: Uri, bytes: ByteArray) = throw UnsupportedOperationException("no backup screen yet")
 }

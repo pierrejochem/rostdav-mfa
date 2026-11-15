@@ -41,7 +41,12 @@ object Dest {
     const val SETTINGS = "settings"
     const val RECONNECT = "reconnect"
 
+    /** The Backup screen; `restore=true` opens the restore picker on arrival. */
+    const val BACKUP = "settings/backup?restore={restore}"
+
     fun approve(id: String) = "approve/$id"
+
+    fun backup(restore: Boolean = false) = "settings/backup?restore=$restore"
 }
 
 private data class Tab(val route: String, val label: Int, val icon: Int)
@@ -72,10 +77,11 @@ fun AppNavigation(
     nav: NavHostController = rememberNavController(),
     pendingCount: Int = 0,
     vaultGraph: NavGraphBuilder.(NavHostController) -> Unit = {},
+    backupSubtitle: () -> String = { "" },
 ) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route
-    val showBar = route != null && route != Dest.ONBOARDING && route != Dest.RECONNECT && route != Dest.APPROVE && !route.startsWith("vault/")
+    val showBar = route != null && route != Dest.ONBOARDING && route != Dest.RECONNECT && route != Dest.APPROVE && !route.startsWith("vault/") && route != Dest.BACKUP
     val tabs = Tabs.map { FloatingTab(it.route, stringResource(it.label), it.icon, if (it.route == Dest.REQUESTS) pendingCount else null) }
     // screens with the floating bar draw under the system navigation area (the bar pads itself); the others,
     // which have forms and bottom buttons, stay clear of the navigation bar and the keyboard
@@ -95,7 +101,16 @@ fun AppNavigation(
                         approve(e.arguments?.getString("id").orEmpty()) { nav.popBackStack() }
                     }
                     composable(Dest.DEVICES) { devices() }
-                    composable(Dest.SETTINGS) { SettingsScreen(server, version, onOpenDevices = { nav.navigate(Dest.DEVICES) }) }
+                    composable(Dest.SETTINGS) {
+                        SettingsScreen(
+                            server,
+                            version,
+                            onOpenDevices = { nav.navigate(Dest.DEVICES) },
+                            onOpenBackup = { nav.navigate(Dest.backup()) { launchSingleTop = true } },
+                            // read on each visit, so a backup made meanwhile shows
+                            backupSubtitle = backupSubtitle(),
+                        )
+                    }
                     vaultGraph(nav)
                 }
             }

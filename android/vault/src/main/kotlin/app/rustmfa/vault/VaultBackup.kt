@@ -37,9 +37,12 @@ object VaultBackup {
     private const val NONCE_BYTES = 12
     private const val KEY_BYTES = 32
 
-    // Argon2 allocates all its memory up front (about 68 MiB on export, up to 136 MiB on import); on a low-RAM
-    // device that is an OutOfMemoryError, which a caller's catch (e: Exception) would not catch.
-    private const val KDF_OUT_OF_MEMORY = "not enough memory for the backup key derivation"
+    /**
+     * The [BackupFormatException] message when the key derivation runs out of memory. Argon2 allocates all its
+     * memory up front (about 68 MiB on export, up to 136 MiB on import); on a low-RAM device that is an
+     * OutOfMemoryError, which a caller's catch (e: Exception) would not catch. Public so the UI can tell it apart.
+     */
+    const val KDF_OUT_OF_MEMORY = "not enough memory for the backup key derivation"
 
     private val DEFAULT_KDF: BackupKdf = { password, salt, m, t, p, length -> VaultKdf.argon2id(password, salt, m, t, p, length) }
 

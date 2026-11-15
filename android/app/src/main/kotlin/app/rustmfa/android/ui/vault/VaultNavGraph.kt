@@ -11,7 +11,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import app.rustmfa.android.vault.BackupState
+import app.rustmfa.android.vault.BackupViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -59,13 +65,31 @@ class ManualFormHolder : ViewModel() {
     override fun onCleared() = form.clear()
 }
 
-/** The add flow: the Add screen, the scanner, Confirm, and by hand. An added account returns to the Overview. */
-fun NavGraphBuilder.vaultGraph(nav: NavHostController, vm: VaultViewModel) {
+/**
+ * The add flow (the Add screen, the scanner, Confirm, and by hand; an added account returns to the Overview) and the
+ * Backup screen, whose view model [backupFactory] builds (scoped to its back stack entry, so a rotation keeps a
+ * running backup).
+ */
+fun NavGraphBuilder.vaultGraph(nav: NavHostController, vm: VaultViewModel, backupFactory: ViewModelProvider.Factory) {
+    composable(
+        Dest.BACKUP,
+        arguments = listOf(navArgument("restore") {
+            type = NavType.BoolType
+            defaultValue = false
+        }),
+    ) { entry ->
+        val backup: BackupViewModel = viewModel(factory = backupFactory)
+        val state by backup.state.collectAsState()
+        // the Overview rows and the nudge follow a restore or a new backup
+        LaunchedEffect(state) { if (state == BackupState.Saved || state is BackupState.Restored) vm.refresh() }
+        BackupScreen(backup, onBack = { nav.popIfAt(Dest.BACKUP) }, startRestore = entry.arguments?.getBoolean("restore") == true)
+    }
     composable(VaultDest.ADD) {
         AddAccountScreen(
             onScan = { nav.navigate(VaultDest.SCAN) { launchSingleTop = true } },
             onManual = { nav.navigate(VaultDest.MANUAL) { launchSingleTop = true } },
-            onImport = {}, // the restore flow (task 7)
+            // restore into the open vault, on the Backup screen
+            onImport = { nav.navigate(Dest.backup(restore = true)) { launchSingleTop = true } },
             onBack = { nav.popIfAt(VaultDest.ADD) },
         )
     }

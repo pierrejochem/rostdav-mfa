@@ -62,7 +62,7 @@ class HomeScreenTest {
 
     @Test fun settingsOffersDevicesAndActivity() {
         var opened = 0
-        rule.setContent { RustMfaTheme { SettingsScreen("https://rd.example", "0.1.0", onOpenDevices = { opened++ }) } }
+        rule.setContent { RustMfaTheme { SettingsScreen("https://rd.example", "0.1.0", onOpenDevices = { opened++ }, onOpenBackup = {}, backupSubtitle = "No backup yet") } }
         rule.onNodeWithText("Devices and activity").performClick()
         assertEquals(1, opened)
     }
