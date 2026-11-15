@@ -87,6 +87,24 @@ class VaultViewModel(
         launchSafely { if (tryUnlock(forSave = false)) reload() }
     }
 
+    /**
+     * True when the vault is open, after the prompt if it was not (the prompt creates the vault on first use).
+     * A cancelled prompt is false with no message; called from the UI before it opens the add flow.
+     */
+    suspend fun ensureUnlocked(): Boolean {
+        if (gateway.isUnlocked) return true
+        return try {
+            val open = tryUnlock(forSave = false)
+            if (open) reload()
+            open && gateway.isUnlocked
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _events.emit(VaultEvent.Failed(R.string.vault_error_generic))
+            false
+        }
+    }
+
     fun lock() {
         launchSafely {
             gateway.lock()

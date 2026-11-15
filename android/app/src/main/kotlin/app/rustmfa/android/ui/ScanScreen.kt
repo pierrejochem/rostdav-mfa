@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.annotation.StringRes
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -47,9 +48,20 @@ import com.google.zxing.common.HybridBinarizer
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Asks for the camera at the moment of scanning; a denial leaves the manual entry usable. */
+/**
+ * Asks for the camera at the moment of scanning; a denial leaves the manual entry usable. [message] shows as an error
+ * banner over the content. By default the first decoded text is handed over once; [continuous] hands over every
+ * decoded frame, for a caller that rejects some and keeps scanning. [deniedText] explains a denied camera.
+ */
 @Composable
-fun ScanScreen(onText: (String) -> Unit, onManual: () -> Unit, onBack: () -> Unit) {
+fun ScanScreen(
+    onText: (String) -> Unit,
+    onManual: () -> Unit,
+    onBack: () -> Unit,
+    message: String? = null,
+    continuous: Boolean = false,
+    @StringRes deniedText: Int = R.string.scan_permission_denied,
+) {
     val context = LocalContext.current
     var granted by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
@@ -63,17 +75,17 @@ fun ScanScreen(onText: (String) -> Unit, onManual: () -> Unit, onBack: () -> Uni
     LaunchedEffect(Unit) { if (!granted) launcher.launch(Manifest.permission.CAMERA) }
     if (granted) {
         Box(Modifier.fillMaxSize()) {
-            CameraPreview(onText)
-            Text(
-                stringResource(R.string.scan_hint),
-                modifier = Modifier.align(Alignment.TopCenter).padding(24.dp),
-                color = androidx.compose.ui.graphics.Color.White,
-            )
+            CameraPreview(onText, continuous)
+            Column(Modifier.align(Alignment.TopCenter).padding(24.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.scan_hint), color = androidx.compose.ui.graphics.Color.White)
+                if (message != null) StatusBanner(BannerKind.Error, message)
+            }
             BrandButton(stringResource(R.string.back), onClick = onBack, kind = ButtonKind.Tonal, modifier = Modifier.align(Alignment.BottomStart).padding(16.dp))
         }
     } else {
         Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(24.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
-            if (denied) StatusBanner(BannerKind.Error, stringResource(R.string.scan_permission_denied))
+            if (message != null) StatusBanner(BannerKind.Error, message)
+            if (denied) StatusBanner(BannerKind.Error, stringResource(deniedText))
             BrandButton(stringResource(R.string.scan_button), onClick = { launcher.launch(Manifest.permission.CAMERA) }, modifier = Modifier.fillMaxWidth())
             BrandButton(stringResource(R.string.manual_button), onClick = onManual, kind = ButtonKind.Outlined, modifier = Modifier.fillMaxWidth())
             BrandButton(stringResource(R.string.back), onClick = onBack, kind = ButtonKind.Outlined, modifier = Modifier.fillMaxWidth())
@@ -82,7 +94,7 @@ fun ScanScreen(onText: (String) -> Unit, onManual: () -> Unit, onBack: () -> Uni
 }
 
 @Composable
-private fun CameraPreview(onText: (String) -> Unit) {
+private fun CameraPreview(onText: (String) -> Unit, continuous: Boolean) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val executor = remember { Executors.newSingleThreadExecutor() }
@@ -104,7 +116,7 @@ private fun CameraPreview(onText: (String) -> Unit) {
                             .also { a ->
                                 a.setAnalyzer(executor) { image ->
                                     val text = QrDecoder.decode(image)
-                                    if (text != null && done.compareAndSet(false, true)) {
+                                    if (text != null && (continuous || done.compareAndSet(false, true))) {
                                         ContextCompat.getMainExecutor(ctx).execute { onText(text) }
                                     }
                                 }

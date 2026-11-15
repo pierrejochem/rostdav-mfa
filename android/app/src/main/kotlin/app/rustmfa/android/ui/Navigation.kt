@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -70,10 +71,11 @@ fun AppNavigation(
     approve: @Composable (id: String, onClose: () -> Unit) -> Unit,
     nav: NavHostController = rememberNavController(),
     pendingCount: Int = 0,
+    vaultGraph: NavGraphBuilder.(NavHostController) -> Unit = {},
 ) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route
-    val showBar = route != null && route != Dest.ONBOARDING && route != Dest.RECONNECT && route != Dest.APPROVE
+    val showBar = route != null && route != Dest.ONBOARDING && route != Dest.RECONNECT && route != Dest.APPROVE && !route.startsWith("vault/")
     val tabs = Tabs.map { FloatingTab(it.route, stringResource(it.label), it.icon, if (it.route == Dest.REQUESTS) pendingCount else null) }
     // screens with the floating bar draw under the system navigation area (the bar pads itself); the others,
     // which have forms and bottom buttons, stay clear of the navigation bar and the keyboard
@@ -94,6 +96,7 @@ fun AppNavigation(
                     }
                     composable(Dest.DEVICES) { devices() }
                     composable(Dest.SETTINGS) { SettingsScreen(server, version, onOpenDevices = { nav.navigate(Dest.DEVICES) }) }
+                    vaultGraph(nav)
                 }
             }
             if (showBar) {

@@ -135,4 +135,26 @@
         <item quantity="one">%1$s, %2$d second left</item>
         <item quantity="other">%1$s, %2$d seconds left</item>
     </plurals>
+    <string name="vault_import_backup">Import a backup</string>
+    <string name="vault_add_button">Add</string>
+    <string name="vault_duplicate">This account is already in the vault</string>
+    <string name="vault_field_secret">Secret key</string>
+    <string name="vault_secret_show">Show secret key</string>
+    <string name="vault_secret_hide">Hide secret key</string>
+    <string name="vault_field_type">Type</string>
+    <string name="vault_advanced">Advanced</string>
+    <string name="vault_field_algorithm">Algorithm</string>
+    <string name="vault_field_digits">Digits</string>
+    <string name="vault_field_period">Period (seconds)</string>
+    <string name="vault_field_counter">Starting counter</string>
+    <string name="vault_label_period">Period</string>
+    <string name="vault_label_counter">Counter</string>
+    <string name="vault_period_value">%1$d s</string>
+    <string name="vault_confirm_title">Check the account</string>
+    <string name="vault_confirm_code_hint">Compare this code with the one the service shows.</string>
+    <string name="vault_scan_denied">Camera access was denied. You can still enter the account by hand.</string>
+    <string name="vault_error_secret">The secret key is not valid.</string>
+    <string name="vault_error_name">Enter a service or an account name.</string>
+    <string name="vault_error_period">Enter a period from 1 to 3600 seconds.</string>
+    <string name="vault_error_counter">Enter a counter of 0 or more.</string>
 </resources>

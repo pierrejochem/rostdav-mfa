@@ -135,4 +135,26 @@
         <item quantity="one">%1$s, noch %2$d Sekunde</item>
         <item quantity="other">%1$s, noch %2$d Sekunden</item>
     </plurals>
+    <string name="vault_import_backup">Sicherung importieren</string>
+    <string name="vault_add_button">Hinzufügen</string>
+    <string name="vault_duplicate">Dieses Konto ist schon im Tresor</string>
+    <string name="vault_field_secret">Geheimer Schlüssel</string>
+    <string name="vault_secret_show">Geheimen Schlüssel zeigen</string>
+    <string name="vault_secret_hide">Geheimen Schlüssel verbergen</string>
+    <string name="vault_field_type">Typ</string>
+    <string name="vault_advanced">Erweitert</string>
+    <string name="vault_field_algorithm">Algorithmus</string>
+    <string name="vault_field_digits">Stellen</string>
+    <string name="vault_field_period">Zeitraum (Sekunden)</string>
+    <string name="vault_field_counter">Startzähler</string>
+    <string name="vault_label_period">Zeitraum</string>
+    <string name="vault_label_counter">Zähler</string>
+    <string name="vault_period_value">%1$d s</string>
+    <string name="vault_confirm_title">Konto prüfen</string>
+    <string name="vault_confirm_code_hint">Vergleiche diesen Code mit dem, den der Dienst anzeigt.</string>
+    <string name="vault_scan_denied">Der Kamerazugriff wurde abgelehnt. Du kannst das Konto trotzdem von Hand eingeben.</string>
+    <string name="vault_error_secret">Der geheime Schlüssel ist ungültig.</string>
+    <string name="vault_error_name">Gib einen Dienst oder einen Kontonamen ein.</string>
+    <string name="vault_error_period">Gib einen Zeitraum von 1 bis 3600 Sekunden ein.</string>
+    <string name="vault_error_counter">Gib einen Zähler von 0 oder mehr ein.</string>
 </resources>

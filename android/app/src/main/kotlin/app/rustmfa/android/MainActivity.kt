@@ -33,6 +33,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,6 +49,8 @@ import app.rustmfa.android.ui.RustMfaTheme
 import app.rustmfa.android.ui.vault.AccountActions
 import app.rustmfa.android.ui.vault.AccountsSection
 import app.rustmfa.android.ui.vault.SecureWhile
+import app.rustmfa.android.ui.vault.VaultDest
+import app.rustmfa.android.ui.vault.vaultGraph
 import app.rustmfa.android.vault.BackupFiles
 import app.rustmfa.android.vault.BiometricUnlocker
 import app.rustmfa.android.vault.VaultEvent
@@ -195,6 +198,21 @@ class MainActivity : FragmentActivity() {
                 }
                 loaded?.let { (enrolled, enrollment) ->
                     val nav = rememberNavController()
+                    val scope = rememberCoroutineScope()
+                    var opening by remember { mutableStateOf(false) }
+                    // unlock first (the prompt creates the vault on first use); a cancelled prompt stays here
+                    val openAdd: () -> Unit = {
+                        if (!opening) {
+                            opening = true
+                            scope.launch {
+                                try {
+                                    if (vault.ensureUnlocked()) nav.navigate(VaultDest.ADD) { launchSingleTop = true }
+                                } finally {
+                                    opening = false
+                                }
+                            }
+                        }
+                    }
                     LaunchedEffect(enrollment) { if (enrollment != null && !enrollment.needsReconnect) startSession(app, enrollment) }
                     val wanted = openChallenge.value
                     LaunchedEffect(wanted, enrolled) {
@@ -233,7 +251,7 @@ class MainActivity : FragmentActivity() {
                                     showNudge = showNudge,
                                     onUnlock = vault::unlock,
                                     onLock = vault::lock,
-                                    onAdd = {}, // the Add account screen (task 5)
+                                    onAdd = openAdd,
                                     onCopy = vault::copy,
                                     onGenerate = vault::generateHotp,
                                     onOpenMenu = { menuId = it },
@@ -247,6 +265,7 @@ class MainActivity : FragmentActivity() {
                         requests = { onOpen -> RequestsScreen(pendingList.value, onOpen) },
                         enrolled = enrolled,
                         pendingCount = pendingList.value.size,
+                        vaultGraph = { n -> vaultGraph(n, vault) },
                         server = enrollment?.server ?: "",
                         version = BuildConfig.VERSION_NAME,
                         onboarding = { onDone0 ->

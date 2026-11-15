@@ -449,4 +449,57 @@ class VaultViewModelTest {
         runCurrent()
         assertEquals(clipboard.copied, clipboard.cleared)
     }
+
+    @Test
+    fun `ensureUnlocked on an open vault is true without a prompt`() = vaultTest {
+        openVault(totp)
+        val vm = viewModel()
+        assertTrue(vm.ensureUnlocked())
+        assertEquals(emptyList(), gateway.calls)
+    }
+
+    @Test
+    fun `ensureUnlocked on no vault creates it`() = vaultTest {
+        val vm = viewModel()
+        assertTrue(vm.ensureUnlocked())
+        assertEquals(listOf("unlock"), gateway.calls)
+        assertEquals(VaultUiState.Empty, vm.state.value)
+    }
+
+    @Test
+    fun `ensureUnlocked on a locked vault unlocks it`() = vaultTest {
+        openVault(totp)
+        gateway.session.lock()
+        val vm = viewModel()
+        assertTrue(vm.ensureUnlocked())
+        assertEquals(1, vm.rows().size)
+    }
+
+    @Test
+    fun `ensureUnlocked with a cancelled prompt is false, stays put and emits nothing`() = vaultTest {
+        val vm = viewModel()
+        val events = events(vm)
+        gateway.unlockFailures += VaultAuthRequiredException()
+        assertFalse(vm.ensureUnlocked())
+        assertEquals(VaultUiState.NoVault, vm.state.value)
+        assertEquals(emptyList(), events)
+    }
+
+    @Test
+    fun `ensureUnlocked with a lost key is false and needs a reset`() = vaultTest {
+        gateway.stored = emptyList()
+        val vm = viewModel()
+        gateway.unlockFailures += VaultKeyLostException()
+        assertFalse(vm.ensureUnlocked())
+        assertEquals(VaultUiState.NeedsReset, vm.state.value)
+    }
+
+    @Test
+    fun `ensureUnlocked with an unexpected failure is false with the generic message`() = vaultTest {
+        val vm = viewModel()
+        val events = events(vm)
+        gateway.unlockFailures += IllegalStateException("boom")
+        assertFalse(vm.ensureUnlocked())
+        assertEquals(listOf<VaultEvent>(VaultEvent.Failed(app.rustmfa.android.R.string.vault_error_generic)), events)
+    }
 }
