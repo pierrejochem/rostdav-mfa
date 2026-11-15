@@ -34,3 +34,16 @@ jobs:
       - name: Contract tests
         working-directory: contract
         run: cargo test --locked
+
+  brand:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Brand tokens, generated files and contrast
+        run: |
+          python3 -m unittest discover -s brand/tests -v
+          python3 brand/generate.py --check
+          python3 brand/check_contrast.py
