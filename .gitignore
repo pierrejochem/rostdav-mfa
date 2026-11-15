@@ -5,3 +5,6 @@ docs/*.png
 /.idea/
 /.openidea/
 /docs/superpowers/
+
+__pycache__/
+*.pyc
