@@ -1,0 +1,36 @@
+name: android
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      # Unit tests, lint and the default (nopush) build only. The emulator tests and the fcm flavor
+      # need a device and a Firebase file; see android/docs/e2e.md.
+      - name: Test, lint and build
+        working-directory: android
+        run: ./gradlew :contract:test :app:testNopushDebugUnitTest :app:lintNopushDebug :app:assembleNopushDebug
+
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contract
+      - name: Contract tests
+        working-directory: contract
+        run: cargo test --locked

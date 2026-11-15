@@ -18,6 +18,22 @@ Use a JDK that is not GraalVM. The `jlink` of GraalVM CE fails inside the Androi
 
 `local.properties` (git-ignored) must set `sdk.dir`.
 
+## Test
+
+    ./gradlew :contract:test :app:testNopushDebugUnitTest :app:lintNopushDebug
+
+The emulator tests need a running device (the debug build allows cleartext HTTP for the test server):
+
+    ./gradlew :app:connectedNopushDebugAndroidTest
+
+An emulator that restarted asks for its PIN again; until it is unlocked, instrumentation fails with "not encryption aware".
+
+## Run on the emulator against a Rostdav
+
+`docs/e2e.md` has the server configuration (`attestation = "off"`, `public_url = "http://10.0.2.2:<port>"`), the commands and the results of the run, and the checklist for a physical phone.
+
+Continuous integration (`../.github/workflows/android.yml`) runs the unit tests, lint, the `nopush` build and the contract tests of both languages on every push. It does not run the emulator tests.
+
 ## Push
 
 The default `nopush` build needs no Google file and no Google service. It registers with the channel `none` and an empty token, and finds new requests by polling while the app is open (every 15 seconds, every 3 seconds while a login is awaited). Notifications are posted for requests the poller sees.

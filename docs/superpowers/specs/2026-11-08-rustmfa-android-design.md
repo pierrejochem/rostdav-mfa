@@ -207,15 +207,17 @@ The push payload is a data message with `challenge_id` only, sent at high priori
 
 ## 8. Phases
 
-0. Spec: OpenAPI 3.1, canonical format, test vectors.
-1. Rostdav `mfa/` module (devices, enroll, challenges, audit, FCM adapter).
-2. Android skeleton, theme, navigation.
-3. Enrollment and `DeviceKey`.
-4. FCM, approve flow, number matching.
-5. TOTP vault, QR/manual/import, encrypted export.
-6. Hardening (`FLAG_SECURE`, backup exclusion, attestation policy, rate limits).
-7. UnifiedPush adapter.
-8. Release (F-Droid and/or Play).
+Status on 2026-11-15: phases 0 to 4 are done and phase 1 is on the Rostdav branch `feat/push-mfa`. Phase 6 is partly done (`FLAG_SECURE`, backup exclusion); the attestation policy and the rate limits are on the server. Phases 5, 7 and 8 are open. The emulator run is in `android/docs/e2e.md`; the physical-phone checklist there is still to be done.
+
+0. Spec: OpenAPI 3.1, canonical format, test vectors. Done.
+1. Rostdav `mfa/` module (devices, enroll, challenges, audit, FCM adapter). Done on `feat/push-mfa`.
+2. Android skeleton, theme, navigation. Done.
+3. Enrollment and `DeviceKey`. Done.
+4. FCM, approve flow, number matching. Done; the default build polls (channel `none`), the `fcm` flavor needs a Firebase file.
+5. TOTP vault, QR/manual/import, encrypted export. Open.
+6. Hardening (`FLAG_SECURE`, backup exclusion, attestation policy, rate limits). Partly done.
+7. UnifiedPush adapter. Open.
+8. Release (F-Droid and/or Play). Open.
 
 ## 9. Open items
 
