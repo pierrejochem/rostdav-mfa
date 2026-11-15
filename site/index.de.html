@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rostdav-mfa: Rostdav-Anmeldungen mit dem Fingerabdruck freigeben</title>
+<meta name="description" content="rostdav-mfa ist ein selbst gehosteter Authenticator für deinen eigenen Rostdav-Server: Anmeldung mit einem Tipp und deinem Fingerabdruck freigeben.">
+<link rel="alternate" hreflang="en" href="index.html">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+<a href="index.de.html" aria-label="rostdav-mfa"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/lockup-dark.svg"><img src="assets/lockup-light.svg" alt="rostdav-mfa" width="210" height="44"></picture></a>
+<nav aria-label="Hauptmenü"><a href="#how">So funktioniert es</a><a href="#security">Sicherheit</a><a href="#status">Stand</a><a href="https://github.com/pierrejochem/rostdav-mfa">Quellcode</a><a href="index.html" hreflang="en" lang="en">English</a></nav>
+</header>
+<main>
+<div class="hero">
+<div>
+<div class="eyebrow">Push-Freigabe für Rostdav</div>
+<h1>Deine Sicherheit. Deine Kontrolle.</h1>
+<p class="lead">rostdav-mfa gibt Anmeldungen an deinem eigenen Rostdav-Server mit einem Tipp und deinem Fingerabdruck frei. Kein Konto, keine Cloud, kein Dritter.</p>
+<div class="cta"><a class="btn" href="#how">So funktioniert es</a><a class="btn o" href="https://github.com/pierrejochem/rostdav-mfa">Quellcode auf GitHub</a></div>
+</div>
+<img src="assets/hero.png" alt="Drei Telefon-Bildschirme: die Übersicht mit einer wartenden Anfrage, die Freigabe mit drei Zahlen und die Einstellungen." width="1600" height="800">
+</div>
+<section aria-labelledby="f">
+<h2 id="f">Was es kann</h2>
+<div class="grid">
+<div class="card"><h3>Zahlenabgleich</h3><p>Der Browser zeigt eine Zahl, dein Telefon drei. Du wählst die richtige. So lässt sich eine Anfrage, die du nicht gestartet hast, nicht aus Versehen freigeben.</p></div>
+<div class="card"><h3>Mit dem Fingerabdruck signiert</h3><p>Der Freigabeschlüssel liegt im hardwaregestützten Schlüsselspeicher des Telefons. Er wird erst nach Fingerabdruck oder Gesicht benutzt und verlässt das Telefon nie.</p></div>
+<div class="card"><h3>Läuft auf deinem Rostdav</h3><p>Die App spricht nur mit deinem Server. Die Standard-Version braucht keinen Google-Dienst; sie holt neue Anfragen ab, solange die App offen ist.</p></div>
+</div>
+</section>
+<section id="how" aria-labelledby="hw">
+<h2 id="hw">So funktioniert es</h2>
+<ol class="steps">
+<li><h3>Anmelden</h3><p>Du meldest dich im Browser bei Rostdav an und schickst die Anfrage an dein Telefon. Die Seite zeigt eine Zahl.</p></li>
+<li><h3>Abgleichen</h3><p>Dein Telefon zeigt Dienst, Gerät und ungefähren Ort. Du wählst die Zahl, die der Browser zeigt.</p></li>
+<li><h3>Bestätigen</h3><p>Du bestätigst mit Fingerabdruck oder Gesicht, und der Browser meldet dich an. Falsche Zahl oder Ablehnen: Die Anmeldung wird abgelehnt.</p></li>
+</ol>
+</section>
+<section aria-labelledby="sc">
+<h2 id="sc">Die App</h2>
+<div class="shots">
+<img src="assets/05-overview-request-dark.png" alt="Übersicht mit einer wartenden Anmeldeanfrage" width="1080" height="2400" loading="lazy">
+<img src="assets/09-approve-dark.png" alt="Freigabe mit drei Zahlen zur Auswahl" width="1080" height="2400" loading="lazy">
+<img src="assets/06-requests-dark.png" alt="Die Liste der Anmeldeanfragen" width="1080" height="2400" loading="lazy">
+<img src="assets/07-settings-dark.png" alt="Einstellungen mit dem verbundenen Server" width="1080" height="2400" loading="lazy">
+</div>
+</section>
+<section id="security" aria-labelledby="sm">
+<h2 id="sm">Sicherheitsmodell</h2>
+<ul class="facts">
+<li><strong>Hardwaregestützter Schlüssel.</strong> Der Freigabeschlüssel entsteht im Android-Schlüsselspeicher und wird nur nach Biometrie benutzt.</li><li><strong>Alles ist signiert.</strong> Anfragen und Antworten tragen Signaturen; der Server prüft Signatur, Zahl und Zeit.</li><li><strong>Kein Tracking.</strong> Die App hat kein Konto, keine Analyse und spricht nur mit deinem Rostdav-Server.</li><li><strong>Screenshots gesperrt.</strong> Die Freigabe blockiert Bildschirmaufnahmen und die Vorschau in der App-Übersicht.</li><li><strong>Telefon verloren.</strong> Entferne es in deinem Rostdav-Konto; es kann nie wieder eine Anmeldung freigeben.</li>
+</ul>
+</section>
+<section id="status" aria-labelledby="st">
+<h2 id="st">Stand</h2>
+<div class="grid">
+<div class="card"><h3>Heute schon da</h3><p>Einrichten per QR-Code oder von Hand, Zahlenabgleich, Freigabe per Biometrie, die Liste deiner Telefone und letzten Ereignisse, Telefon entfernen, dunkles und helles Design, Deutsch und Englisch. Auf einem Emulator gegen ein echtes Rostdav getestet.</p></div>
+<div class="note"><h3>Geplant: Authenticator-Tresor</h3><p>Einmalcodes für andere Dienste, verschlüsselt auf dem Telefon gespeichert. Geplant, noch nicht gebaut. Es gibt noch keine Store-Version; du baust die App aus dem Quellcode.</p></div>
+</div>
+</section>
+</main>
+<footer>rostdav-mfa ist Open Source unter der Apache-2.0- oder der MIT-Lizenz. Schriften: Space Grotesk und JetBrains Mono, SIL Open Font License 1.1.</footer>
+</div>
+</body>
+</html>

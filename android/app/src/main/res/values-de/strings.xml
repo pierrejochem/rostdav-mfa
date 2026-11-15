@@ -2,7 +2,6 @@
 <resources>
     <string name="app_name">rostdav-mfa</string>
     <string name="nav_home">Übersicht</string>
-    <string name="nav_devices">Geräte</string>
     <string name="nav_settings">Einstellungen</string>
     <string name="onboarding_title">Mit dem Server verbinden</string>
     <string name="onboarding_text">Scanne den QR-Code deines Rostdav-Servers oder gib Adresse und Token von Hand ein.</string>
@@ -80,4 +79,26 @@
     <string name="audit_number_mismatch">Falsche Zahl gewählt</string>
     <string name="reconnect_title">Gerät neu verbinden</string>
     <string name="reconnect_server">Server: %1$s</string>
+    <string name="code_ring_description">Code, noch %1$d Sekunden</string>
+    <string name="number_choice_description">Zahl %1$d</string>
+    <string name="brand_name">rostdav-mfa</string>
+    <string name="nav_requests">Anfragen</string>
+    <string name="home_greeting">Willkommen zurück</string>
+    <string name="home_protected_title">Geschützt</string>
+    <string name="home_protected_body">Freigaben brauchen deinen Fingerabdruck oder dein Gesicht.</string>
+    <string name="home_see_all">Alle anzeigen</string>
+    <string name="home_accounts">Konten</string>
+    <string name="home_vault_title">Authenticator-Tresor</string>
+    <string name="home_vault_planned">Geplant. Deine Einmalcodes liegen hier, verschlüsselt auf diesem Telefon.</string>
+    <string name="settings_devices">Geräte und Aktivität</string>
+    <string name="settings_devices_hint">Deine Telefone und die letzten Anmeldungen</string>
+    <string name="settings_server">Server</string>
+    <plurals name="home_pending_count">
+        <item quantity="one">%1$d Anmeldeanfrage wartet</item>
+        <item quantity="other">%1$d Anmeldeanfragen warten</item>
+    </plurals>
+    <plurals name="badge_waiting">
+        <item quantity="one">%1$d wartet</item>
+        <item quantity="other">%1$d warten</item>
+    </plurals>
 </resources>

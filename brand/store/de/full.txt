@@ -1,0 +1,25 @@
+rostdav-mfa ist die Telefon-Seite der Anmeldung an deinem eigenen Rostdav-Server.
+
+Meldest du dich im Browser bei Rostdav an, bekommt dein Telefon eine Anfrage. Sie zeigt den Dienst, das Gerät und den ungefähren Ort der Anmeldung. Du wählst die Zahl, die der Browser zeigt, bestätigst mit Fingerabdruck oder Gesicht, und der Browser meldet dich an. Stimmt die Zahl nicht oder tippst du auf Ablehnen, wird die Anmeldung abgelehnt.
+
+Warum das sicher ist
+• Der Freigabeschlüssel entsteht im hardwaregestützten Schlüsselspeicher des Telefons und verlässt ihn nie. Er wird erst nach deinem Fingerabdruck oder deinem Gesicht benutzt.
+• Jede Anfrage und jede Antwort ist signiert. Der Server prüft Signatur, Zahl und Zeit.
+• Kein Konto, kein Cloud-Dienst, kein Tracking. Die App spricht nur mit deinem Rostdav-Server.
+• Die Standard-Version braucht keine Google-Dienste. Sie holt neue Anfragen ab, solange die App offen ist.
+• Der Freigabe-Bildschirm blockiert Screenshots und die Vorschau in der App-Übersicht.
+• Telefon verloren? Entferne es in deinem Rostdav-Konto; es kann nie wieder eine Anmeldung freigeben.
+
+Das bekommst du
+• Zahlenabgleich: Eine Anfrage, die du nicht gestartet hast, lässt sich nicht aus Versehen freigeben.
+• Eine Übersicht der wartenden Anfragen, mit Zähler auf dem Reiter Anfragen.
+• Deine Telefone und die letzten Anmelde-Ereignisse, und eine Möglichkeit, ein Telefon zu entfernen.
+• Dunkles und helles Design, Deutsch und Englisch.
+
+Das brauchst du
+• Einen Rostdav-Server mit eingeschalteter Telefon-Anmeldung. Du verbindest dich mit dem QR-Code aus den Rostdav-Einstellungen im Web oder mit Adresse und Einmal-Token.
+
+Später
+• Ein Authenticator-Tresor für Einmalcodes, verschlüsselt auf dem Telefon gespeichert. Er ist geplant und nicht Teil dieser Version.
+
+rostdav-mfa ist Open Source unter der Apache-2.0- oder der MIT-Lizenz.

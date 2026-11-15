@@ -14,10 +14,10 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import app.rustmfa.android.R
+import app.rustmfa.android.ui.design.BannerKind
+import app.rustmfa.android.ui.design.BrandButton
+import app.rustmfa.android.ui.design.ButtonKind
+import app.rustmfa.android.ui.design.StatusBanner
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.DecodeHintType
@@ -65,16 +69,14 @@ fun ScanScreen(onText: (String) -> Unit, onManual: () -> Unit, onBack: () -> Uni
                 modifier = Modifier.align(Alignment.TopCenter).padding(24.dp),
                 color = androidx.compose.ui.graphics.Color.White,
             )
-            TextButton(onClick = onBack, modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)) {
-                Text(stringResource(R.string.back))
-            }
+            BrandButton(stringResource(R.string.back), onClick = onBack, kind = ButtonKind.Tonal, modifier = Modifier.align(Alignment.BottomStart).padding(16.dp))
         }
     } else {
-        Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
-            if (denied) Text(stringResource(R.string.scan_permission_denied))
-            Button(onClick = { launcher.launch(Manifest.permission.CAMERA) }) { Text(stringResource(R.string.scan_button)) }
-            Button(onClick = onManual) { Text(stringResource(R.string.manual_button)) }
-            TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+        Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(24.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+            if (denied) StatusBanner(BannerKind.Error, stringResource(R.string.scan_permission_denied))
+            BrandButton(stringResource(R.string.scan_button), onClick = { launcher.launch(Manifest.permission.CAMERA) }, modifier = Modifier.fillMaxWidth())
+            BrandButton(stringResource(R.string.manual_button), onClick = onManual, kind = ButtonKind.Outlined, modifier = Modifier.fillMaxWidth())
+            BrandButton(stringResource(R.string.back), onClick = onBack, kind = ButtonKind.Outlined, modifier = Modifier.fillMaxWidth())
         }
     }
 }
