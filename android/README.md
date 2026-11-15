@@ -1,18 +1,17 @@
-# RustMFA Android app
+# rostdav-mfa Android app
 
-Native Android app for RustMFA push approval (spec phases 2 to 4). The app talks to a Rostdav server over the contract in `../contract`.
+Native Android app for rostdav-mfa push approval (spec phases 2 to 4). The app talks to a Rostdav server over the contract in `../contract`.
 
 ## Screenshots
 
-Taken on the emulator against a real Rostdav (light first, then dark). The Approve screen blocks screen capture (`FLAG_SECURE`), so its pictures are rendered by `ScreenshotsTest` instead of captured from the window.
+Taken on the emulator against a real Rostdav, dark first, then light. The Approve screen blocks screen capture (`FLAG_SECURE`), so its pictures are rendered by `ScreenshotsTest` instead of captured from the window.
 
-| | | |
-| --- | --- | --- |
-| ![Connect to your server](../media/01-onboarding-light.png) | ![Enter by hand](../media/02-manual-entry-light.png) | ![Name this phone](../media/03-name-phone-light.png) |
-| ![Overview, no requests](../media/04-overview-empty-light.png) | ![Overview with a request](../media/05-overview-request-light.png) | ![Notification](../media/06-notification-light.png) |
-| ![Approve](../media/12-approve-light.png) | ![Approved](../media/14-approved-light.png) | ![Devices](../media/07-devices-light.png) |
-| ![Settings](../media/08-settings-light.png) | ![Approve, dark](../media/13-approve-dark.png) | ![Devices, dark](../media/10-devices-dark.png) |
-| ![Overview, dark](../media/09-overview-dark.png) | ![Settings, dark](../media/11-settings-dark.png) | |
+| | | | |
+| --- | --- | --- | --- |
+| ![Connect to your server](../media/01-onboarding-dark.png) | ![Enter by hand](../media/02-manual-entry-dark.png) | ![Name this phone](../media/03-name-phone-dark.png) | ![Overview, no requests](../media/04-overview-empty-dark.png) |
+| ![Overview with a request](../media/05-overview-request-dark.png) | ![Requests](../media/06-requests-dark.png) | ![Settings](../media/07-settings-dark.png) | ![Devices](../media/08-devices-dark.png) |
+| ![Approve](../media/09-approve-dark.png) | ![Approved](../media/10-approved-dark.png) | ![Connect to your server, light](../media/01-onboarding-light.png) | ![Overview, light](../media/05-overview-request-light.png) |
+| ![Approve, light](../media/09-approve-light.png) | ![Requests, light](../media/06-requests-light.png) | ![Settings, light](../media/07-settings-light.png) | ![Devices, light](../media/08-devices-light.png) |
 
 ## Modules
 
