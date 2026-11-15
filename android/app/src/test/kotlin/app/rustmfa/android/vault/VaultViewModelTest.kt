@@ -339,6 +339,37 @@ class VaultViewModelTest {
     }
 
     @Test
+    fun `edit changes issuer and label only, secret and settings stay`() = vaultTest {
+        openVault(totp)
+        val vm = viewModel()
+        val before = gateway.session.accounts().single()
+        vm.updateAccount(before.id, "New", "carol")
+        val after = gateway.session.accounts().single()
+        assertEquals(before.copy(issuer = "New", label = "carol", secret = before.secret), after.copy(secret = before.secret))
+        assertTrue(before.secret.contentEquals(after.secret))
+        assertEquals(listOf("update"), gateway.calls)
+    }
+
+    @Test
+    fun `delete removes the account once`() = vaultTest {
+        openVault(totp)
+        val vm = viewModel()
+        vm.deleteAccount(vm.rows().single().id)
+        assertEquals(listOf("remove"), gateway.calls)
+        assertEquals(VaultUiState.Empty, vm.state.value)
+    }
+
+    @Test
+    fun `copy on a HOTP row with no generated code copies nothing and fails quietly`() = vaultTest {
+        openVault(hotp)
+        val vm = viewModel()
+        val events = events(vm)
+        vm.copy(vm.rows().single().id)
+        assertTrue(clipboard.copied.isEmpty())
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
     fun `a generated HOTP code shows until the lock`() = vaultTest {
         openVault(hotp)
         val vm = viewModel()

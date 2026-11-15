@@ -123,6 +123,12 @@
     <string name="vault_action_copy">Kopieren</string>
     <string name="vault_action_edit">Bearbeiten</string>
     <string name="vault_action_delete">Löschen</string>
+    <string name="vault_cancel">Abbrechen</string>
+    <string name="vault_save">Speichern</string>
+    <string name="vault_edit_title">Konto bearbeiten</string>
+    <string name="vault_field_service">Dienst</string>
+    <string name="vault_field_account">Kontoname</string>
+    <string name="vault_delete_text">%1$s löschen? Du kannst es nur aus einem Backup oder durch erneutes Hinzufügen beim Dienst zurückholen.</string>
     <string name="vault_hotp_next">Nächster Code</string>
     <plurals name="vault_row_description">
         <item quantity="one">%1$s, noch %2$d Sekunde</item>

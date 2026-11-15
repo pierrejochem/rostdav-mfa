@@ -123,6 +123,12 @@
     <string name="vault_action_copy">Copy</string>
     <string name="vault_action_edit">Edit</string>
     <string name="vault_action_delete">Delete</string>
+    <string name="vault_cancel">Cancel</string>
+    <string name="vault_save">Save</string>
+    <string name="vault_edit_title">Edit account</string>
+    <string name="vault_field_service">Service</string>
+    <string name="vault_field_account">Account name</string>
+    <string name="vault_delete_text">Delete %1$s? You can only get it back from a backup, or by adding it again at the service.</string>
     <string name="vault_hotp_next">Next code</string>
     <plurals name="vault_row_description">
         <item quantity="one">%1$s, %2$d second left</item>

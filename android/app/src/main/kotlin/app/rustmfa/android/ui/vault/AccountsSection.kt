@@ -170,7 +170,7 @@ private fun AccountRowItem(row: AccountRow, onCopy: (String) -> Unit, onGenerate
                 contentDescription = description
                 customActions =
                     listOf(
-                        CustomAccessibilityAction(copy) { onCopy(row.id); true },
+                        CustomAccessibilityAction(copy) { if (generate) onGenerate(row.id) else onCopy(row.id); true },
                         CustomAccessibilityAction(edit) { onOpenMenu(row.id); true },
                         CustomAccessibilityAction(delete) { onOpenMenu(row.id); true },
                     )

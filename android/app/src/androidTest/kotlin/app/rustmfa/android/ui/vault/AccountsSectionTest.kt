@@ -164,6 +164,13 @@ class AccountsSectionTest {
         assertEquals(listOf("copy:t1", "menu:t1", "menu:t1"), calls)
     }
 
+    @Test fun theCopyActionOnAHotpRowWithNoCodeGenerates() {
+        show(VaultUiState.Unlocked(listOf(hotp())))
+        val actions = rule.onNodeWithTag("account-row-h1").fetchSemanticsNode().config[SemanticsActions.CustomActions]
+        rule.runOnIdle { actions.first { it.label == "Copy" }.action() }
+        assertEquals(listOf("generate:h1"), calls)
+    }
+
     @Test fun theNudgeShowsOnlyWhenAsked() {
         show(VaultUiState.Unlocked(listOf(totp())), showNudge = true)
         rule.onNodeWithText("No backup yet").assertIsDisplayed()

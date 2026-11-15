@@ -44,6 +44,7 @@ import app.rustmfa.android.ui.ApproveViewModel
 import app.rustmfa.android.ui.OnboardingScreen
 import app.rustmfa.android.ui.OnboardingViewModel
 import app.rustmfa.android.ui.RustMfaTheme
+import app.rustmfa.android.ui.vault.AccountActions
 import app.rustmfa.android.ui.vault.AccountsSection
 import app.rustmfa.android.ui.vault.SecureWhile
 import app.rustmfa.android.vault.BackupFiles
@@ -172,6 +173,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             val vaultState by vault.state.collectAsState()
             val showNudge by vault.showNudge.collectAsState()
+            var menuId by remember { mutableStateOf<String?>(null) }
             SecureWhile(vaultState is VaultUiState.Unlocked || vaultState == VaultUiState.Empty)
             LaunchedEffect(Unit) {
                 vault.events.collect { e ->
@@ -215,6 +217,15 @@ class MainActivity : FragmentActivity() {
                             }
                         },
                         home = { onOpen, onSeeAll ->
+                            AccountActions(
+                                state = vaultState,
+                                openId = menuId,
+                                onClose = { menuId = null },
+                                onCopy = vault::copy,
+                                onGenerate = vault::generateHotp,
+                                onUpdate = vault::updateAccount,
+                                onDelete = vault::deleteAccount,
+                            )
                             HomeScreen(enrollment?.server ?: "", pendingList.value, notificationsOff.value, onOpen, onSeeAll) {
                                 AccountsSection(
                                     state = vaultState,
@@ -224,7 +235,7 @@ class MainActivity : FragmentActivity() {
                                     onAdd = {}, // the Add account screen (task 5)
                                     onCopy = vault::copy,
                                     onGenerate = vault::generateHotp,
-                                    onOpenMenu = {}, // the long-press sheet (task 4)
+                                    onOpenMenu = { menuId = it },
                                     onBackup = {}, // the Backup screen (task 6)
                                     onDismissNudge = vault::dismissNudge,
                                     onRestore = {}, // the cannot-be-opened flow (task 7)
