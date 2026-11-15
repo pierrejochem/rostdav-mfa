@@ -45,6 +45,7 @@ android {
 
 dependencies {
     implementation(project(":contract"))
+    implementation(project(":vault"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
