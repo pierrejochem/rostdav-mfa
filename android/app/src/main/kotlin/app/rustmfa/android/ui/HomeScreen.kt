@@ -30,6 +30,7 @@ import app.rustmfa.android.ui.design.ListRow
 import app.rustmfa.android.ui.design.StatusBanner
 import app.rustmfa.android.ui.design.Tokens
 import app.rustmfa.android.ui.design.brandWash
+import app.rustmfa.android.ui.design.screenPadding
 
 private const val OVERVIEW_ROWS = 3
 
@@ -43,7 +44,7 @@ fun HomeScreen(
     onSeeAll: () -> Unit,
 ) {
     Column(
-        Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).padding(24.dp),
+        Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).screenPadding(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column {
@@ -74,7 +75,7 @@ fun HomeScreen(
 @Composable
 fun RequestsScreen(pending: List<ChallengeDetails>, onOpen: (String) -> Unit) {
     Column(
-        Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).padding(24.dp),
+        Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).screenPadding(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column {

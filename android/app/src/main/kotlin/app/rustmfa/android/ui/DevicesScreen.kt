@@ -3,6 +3,7 @@ package app.rustmfa.android.ui
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import app.rustmfa.android.ui.design.BrandButton
 import app.rustmfa.android.ui.design.ButtonKind
 import app.rustmfa.android.ui.design.ListCard
 import app.rustmfa.android.ui.design.ListRow
+import app.rustmfa.android.ui.design.LocalBarClearance
 import app.rustmfa.android.ui.design.StatusBanner
 import app.rustmfa.android.ui.design.brandWash
 import app.rustmfa.android.net.DeviceStatus
@@ -76,7 +78,7 @@ fun DevicesScreen(vm: DevicesViewModel, onThisPhoneRevoked: () -> Unit) {
             Text(stringResource(R.string.devices_title), style = MaterialTheme.typography.headlineMedium)
         }
         s.failure?.let { StatusBanner(BannerKind.Error, stringResource(deviceFailureMessage(it))) }
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(bottom = 24.dp + LocalBarClearance.current)) {
             items(s.devices, key = { it.device.deviceId }) { row ->
                 val d = row.device
                 ListCard {
@@ -104,7 +106,6 @@ fun DevicesScreen(vm: DevicesViewModel, onThisPhoneRevoked: () -> Unit) {
             item {
                 if (s.audit.isNotEmpty()) ListCard { for (e in s.audit) ListRow(stringResource(auditText(e.event)), subtitle = e.at) }
             }
-            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }

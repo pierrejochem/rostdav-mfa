@@ -17,11 +17,12 @@ import app.rustmfa.android.ui.design.LightDarkPreview
 import app.rustmfa.android.ui.design.ListCard
 import app.rustmfa.android.ui.design.ListRow
 import app.rustmfa.android.ui.design.brandWash
+import app.rustmfa.android.ui.design.screenPadding
 
 @Composable
 fun SettingsScreen(server: String, version: String, onOpenDevices: () -> Unit) {
     Column(
-        Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).padding(24.dp),
+        Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).screenPadding(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column {

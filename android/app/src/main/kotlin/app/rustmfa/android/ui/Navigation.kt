@@ -2,19 +2,23 @@ package app.rustmfa.android.ui
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarItemDefaults
+import app.rustmfa.android.ui.design.LocalBarClearance
+import app.rustmfa.android.ui.design.FloatingTabBar
+import app.rustmfa.android.ui.design.FloatingTab
+import app.rustmfa.android.ui.design.BarClearance
+import androidx.compose.ui.Alignment
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import app.rustmfa.android.ui.design.GlassBar
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -64,52 +68,45 @@ fun AppNavigation(
     onboarding: @Composable (onDone: () -> Unit) -> Unit,
     approve: @Composable (id: String, onClose: () -> Unit) -> Unit,
     nav: NavHostController = rememberNavController(),
+    pendingCount: Int = 0,
 ) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route
-    Scaffold(
-        bottomBar = {
-            if (route != null && route != Dest.ONBOARDING && route != Dest.RECONNECT) {
-                GlassBar(Modifier.fillMaxWidth()) {
-                  NavigationBar(Modifier.weight(1f), containerColor = Color.Transparent) {
-                    for (t in Tabs) {
-                        NavigationBarItem(
-                            selected = route == t.route || (t.route == Dest.SETTINGS && route == Dest.DEVICES),
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.tertiary,
-                                selectedTextColor = MaterialTheme.colorScheme.tertiary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
-                            ),
-                            onClick = {
-                                nav.navigate(t.route) {
-                                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(painterResource(t.icon), contentDescription = null) },
-                            label = { Text(stringResource(t.label)) },
-                        )
+    val showBar = route != null && route != Dest.ONBOARDING && route != Dest.RECONNECT && route != Dest.APPROVE
+    val tabs = Tabs.map { FloatingTab(it.route, stringResource(it.label), it.icon, if (it.route == Dest.REQUESTS) pendingCount else null) }
+    Scaffold(containerColor = Color.Transparent, contentWindowInsets = WindowInsets.statusBars) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            CompositionLocalProvider(LocalBarClearance provides if (showBar) BarClearance else 0.dp) {
+                NavHost(nav, startDestination = if (needsReconnect) Dest.RECONNECT else if (enrolled) Dest.HOME else Dest.ONBOARDING, modifier = Modifier.fillMaxSize()) {
+                    composable(Dest.ONBOARDING) {
+                        onboarding {
+                            nav.navigate(Dest.HOME) { popUpTo(Dest.ONBOARDING) { inclusive = true } }
+                        }
                     }
-                  }
+                    composable(Dest.RECONNECT) { reconnect() }
+                    composable(Dest.HOME) { home({ id -> nav.navigate(Dest.approve(id)) }, { nav.navigate(Dest.REQUESTS) }) }
+                    composable(Dest.REQUESTS) { requests { id -> nav.navigate(Dest.approve(id)) } }
+                    composable(Dest.APPROVE, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
+                        approve(e.arguments?.getString("id").orEmpty()) { nav.popBackStack() }
+                    }
+                    composable(Dest.DEVICES) { devices() }
+                    composable(Dest.SETTINGS) { SettingsScreen(server, version, onOpenDevices = { nav.navigate(Dest.DEVICES) }) }
                 }
             }
-        },
-    ) { padding ->
-        NavHost(nav, startDestination = if (needsReconnect) Dest.RECONNECT else if (enrolled) Dest.HOME else Dest.ONBOARDING, modifier = Modifier.padding(padding)) {
-            composable(Dest.ONBOARDING) {
-                onboarding {
-                    nav.navigate(Dest.HOME) { popUpTo(Dest.ONBOARDING) { inclusive = true } }
-                }
+            if (showBar) {
+                FloatingTabBar(
+                    tabs,
+                    selected = if (route == Dest.DEVICES) Dest.SETTINGS else route.orEmpty(),
+                    onSelect = { target ->
+                        nav.navigate(target) {
+                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 26.dp),
+                )
             }
-            composable(Dest.RECONNECT) { reconnect() }
-            composable(Dest.HOME) { home({ id -> nav.navigate(Dest.approve(id)) }, { nav.navigate(Dest.REQUESTS) }) }
-            composable(Dest.REQUESTS) { requests { id -> nav.navigate(Dest.approve(id)) } }
-            composable(Dest.APPROVE, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
-                approve(e.arguments?.getString("id").orEmpty()) { nav.popBackStack() }
-            }
-            composable(Dest.DEVICES) { devices() }
-            composable(Dest.SETTINGS) { SettingsScreen(server, version, onOpenDevices = { nav.navigate(Dest.DEVICES) }) }
         }
     }
 }

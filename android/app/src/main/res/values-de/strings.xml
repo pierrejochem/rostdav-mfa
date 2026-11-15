@@ -97,4 +97,8 @@
         <item quantity="one">%1$d Anmeldeanfrage wartet</item>
         <item quantity="other">%1$d Anmeldeanfragen warten</item>
     </plurals>
+    <plurals name="badge_waiting">
+        <item quantity="one">%1$d wartet</item>
+        <item quantity="other">%1$d warten</item>
+    </plurals>
 </resources>

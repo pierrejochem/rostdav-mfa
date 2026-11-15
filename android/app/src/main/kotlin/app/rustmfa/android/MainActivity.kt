@@ -173,6 +173,7 @@ class MainActivity : FragmentActivity() {
                         },
                         requests = { onOpen -> RequestsScreen(pendingList.value, onOpen) },
                         enrolled = enrolled,
+                        pendingCount = pendingList.value.size,
                         server = enrollment?.server ?: "",
                         version = BuildConfig.VERSION_NAME,
                         onboarding = { onDone0 ->

@@ -97,4 +97,8 @@
         <item quantity="one">%1$d sign-in request is waiting</item>
         <item quantity="other">%1$d sign-in requests are waiting</item>
     </plurals>
+    <plurals name="badge_waiting">
+        <item quantity="one">%1$d waiting</item>
+        <item quantity="other">%1$d waiting</item>
+    </plurals>
 </resources>

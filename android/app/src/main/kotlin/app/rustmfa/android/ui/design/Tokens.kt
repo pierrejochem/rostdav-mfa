@@ -38,6 +38,8 @@ object Tokens {
     val markEnd = Color(0xFFC2491D)
     val iconStart = Color(0xFF2A2D35)
     val iconEnd = Color(0xFF15171C)
+    val tabStart = Color(0xFFCF5524)
+    val tabEnd = Color(0xFF9A3412)
     val radiusChip: Dp = 12.dp
     val radiusCard: Dp = 16.dp
     val radiusSheet: Dp = 24.dp

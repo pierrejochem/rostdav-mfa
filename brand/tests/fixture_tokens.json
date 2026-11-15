@@ -31,7 +31,9 @@
     "markStart": "#E8743B",
     "markEnd": "#C4561F",
     "iconStart": "#2A2D35",
-    "iconEnd": "#15171C"
+    "iconEnd": "#15171C",
+    "tabStart": "#CF5524",
+    "tabEnd": "#9A3412"
   },
   "type": {
     "sizes": {
