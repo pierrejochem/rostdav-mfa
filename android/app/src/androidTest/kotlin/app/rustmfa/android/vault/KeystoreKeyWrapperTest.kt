@@ -2,6 +2,7 @@ package app.rustmfa.android.vault
 
 import android.app.KeyguardManager
 import android.os.Build
+import android.os.ParcelFileDescriptor
 import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -26,6 +27,10 @@ import org.junit.runner.RunWith
  * secure lock screen, so [setUp] sets PIN 1234 (`adb shell locksettings set-pin 1234`) when there is none.
  * If key generation still throws `IllegalStateException`, the test fails with that message; it never skips.
  *
+ * Warning: on an unsecured physical device this test permanently sets the PIN to 1234 and never removes it.
+ * Setting or entering the credential opens the 10-second window, so after setting the PIN [setUp] waits 12 s;
+ * the "outside the window" tests also give a false failure if the device was unlocked in the last 10 seconds.
+ *
  * Nothing here authenticates the user: the credential prompt cannot be driven from a test. So these tests cover
  * only the paths outside the authentication window. That [KeystoreKeyWrapper.create] and
  * [KeystoreKeyWrapper.unwrap] succeed inside the window is not tested here.
@@ -48,7 +53,12 @@ class KeystoreKeyWrapperTest {
     fun setUp() = runBlocking {
         val keyguard = context.getSystemService(KeyguardManager::class.java)
         if (!keyguard.isDeviceSecure) {
-            instrumentation.uiAutomation.executeShellCommand("locksettings set-pin 1234").close()
+            // the command runs asynchronously: read its output to EOF so the PIN is committed before key generation
+            val pfd = instrumentation.uiAutomation.executeShellCommand("locksettings set-pin 1234")
+            ParcelFileDescriptor.AutoCloseInputStream(pfd).use { it.readBytes() }
+            assertTrue(keyguard.isDeviceSecure, "no secure lock screen after `locksettings set-pin 1234`")
+            // setting the credential counts as an authentication and opens the 10 s window; wait until it closes
+            Thread.sleep(AUTH_WINDOW_MILLIS)
         }
         deleteAlias()
         blob.clear()
@@ -131,5 +141,6 @@ class KeystoreKeyWrapperTest {
 
     private companion object {
         const val ALIAS = "test_rostdav_mfa_vault_key"
+        const val AUTH_WINDOW_MILLIS = 12_000L
     }
 }
