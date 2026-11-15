@@ -46,6 +46,7 @@ A UTF-8 JSON object:
 - The associated data is the header object `{"app":...,"v":...,"kdf":{...},"enc":{...}}` (members in that order, no whitespace, `data` left out) as UTF-8. It is always rebuilt from the parsed values, so export and import use the same bytes.
 - Base64 is the standard alphabet with padding.
 - Limits on import, checked before anything is derived: `v` is 1; `kdf.alg` is `argon2id`; `enc.alg` is `aes-256-gcm`; `p` 1 to 4; `m` from 8 times `p` up to 131072 KiB; `t` 1 to 10; salt 16 bytes; nonce 12 bytes. Anything else is a `BackupFormatException`.
+- Argon2 allocates all its memory up front: export and import allocate up to 136 MiB and block for seconds, so the UI must run them off the main thread. If the allocation fails, the `OutOfMemoryError` becomes a `BackupFormatException` with the message `not enough memory for the backup key derivation`.
 - Export needs a passphrase of at least 8 characters (code points, after normalisation); import does not check the length.
 - A wrong passphrase and a damaged file both give `BackupDecryptException`, since they cannot be told apart. Valid decryption with unusable contents gives `BackupFormatException`.
 - Import into a session skips accounts that equal an existing one (issuer, label, algorithm, digits, period and secret) and gives new ids to the rest. The result is an `ImportResult(added, skipped)`. HOTP counters are not compared.

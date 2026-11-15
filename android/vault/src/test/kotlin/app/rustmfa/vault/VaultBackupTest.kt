@@ -192,4 +192,30 @@ class VaultBackupTest {
         assertFailsWith<IllegalArgumentException> { VaultAccountsJson.decode(good.replace("\"type\":\"TOTP\"", "\"type\":\"X\"").toByteArray()) }
         assertFailsWith<IllegalArgumentException> { VaultAccountsJson.decode("{\"v\":1}".toByteArray()) }
     }
+
+    private fun outOfMemory(seen: MutableList<ByteArray>): BackupKdf = { password, _, _, _, _, _ ->
+        seen += password
+        throw OutOfMemoryError("Failed to allocate")
+    }
+
+    @Test
+    fun outOfMemoryInTheKdfOnExportIsAFormatErrorAndZeroesThePassword() {
+        val seen = mutableListOf<ByteArray>()
+        val e = assertFailsWith<BackupFormatException> {
+            VaultBackup.export(listOf(totp), pass, SecureRandom(), 64, 1, outOfMemory(seen))
+        }
+        assertEquals("not enough memory for the backup key derivation", e.message)
+        assertEquals(1, seen.size)
+        assertTrue(seen.single().all { it == 0.toByte() }, "password bytes not zeroed")
+    }
+
+    @Test
+    fun outOfMemoryInTheKdfOnImportIsAFormatErrorAndZeroesThePassword() {
+        val file = smallExport(listOf(totp))
+        val seen = mutableListOf<ByteArray>()
+        val e = assertFailsWith<BackupFormatException> { VaultBackup.import(file, pass, outOfMemory(seen)) }
+        assertEquals("not enough memory for the backup key derivation", e.message)
+        assertEquals(1, seen.size)
+        assertTrue(seen.single().all { it == 0.toByte() }, "password bytes not zeroed")
+    }
 }

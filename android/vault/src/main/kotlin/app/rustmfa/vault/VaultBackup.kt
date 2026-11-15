@@ -17,6 +17,9 @@ import javax.crypto.AEADBadTagException
  * The associated data is the header object (`app`, `v`, `kdf`, `enc` in that order, no whitespace) as UTF-8,
  * always rebuilt by [headerText] so export and import use the same bytes.
  */
+/** (password, salt, memory KiB, iterations, parallelism, key length) to key; injectable for tests. */
+internal typealias BackupKdf = (ByteArray, ByteArray, Int, Int, Int, Int) -> ByteArray
+
 object VaultBackup {
     const val MIN_PASSPHRASE = 8
 
@@ -34,6 +37,12 @@ object VaultBackup {
     private const val NONCE_BYTES = 12
     private const val KEY_BYTES = 32
 
+    // Argon2 allocates all its memory up front (about 68 MiB on export, up to 136 MiB on import); on a low-RAM
+    // device that is an OutOfMemoryError, which a caller's catch (e: Exception) would not catch.
+    private const val KDF_OUT_OF_MEMORY = "not enough memory for the backup key derivation"
+
+    private val DEFAULT_KDF: BackupKdf = { password, salt, m, t, p, length -> VaultKdf.argon2id(password, salt, m, t, p, length) }
+
     private val b64Encoder = Base64.getEncoder()
     private val b64Decoder = Base64.getDecoder()
 
@@ -46,13 +55,16 @@ object VaultBackup {
         random: SecureRandom,
         memoryKiB: Int,
         iterations: Int,
+        deriveKey: BackupKdf = DEFAULT_KDF,
     ): ByteArray {
         val password = passphraseBytes(passphrase, requireMinimum = true)
         val salt = ByteArray(SALT_BYTES).also(random::nextBytes)
         val nonce = ByteArray(NONCE_BYTES).also(random::nextBytes)
         val header = headerText(memoryKiB, iterations, PARALLELISM, salt, nonce)
         val key = try {
-            VaultKdf.argon2id(password, salt, memoryKiB, iterations, PARALLELISM, KEY_BYTES)
+            deriveKey(password, salt, memoryKiB, iterations, PARALLELISM, KEY_BYTES)
+        } catch (e: OutOfMemoryError) {
+            throw BackupFormatException(KDF_OUT_OF_MEMORY)
         } finally {
             password.fill(0)
         }
@@ -67,7 +79,9 @@ object VaultBackup {
         }
     }
 
-    fun import(bytes: ByteArray, passphrase: CharArray): List<OtpAccount> {
+    fun import(bytes: ByteArray, passphrase: CharArray): List<OtpAccount> = import(bytes, passphrase, DEFAULT_KDF)
+
+    internal fun import(bytes: ByteArray, passphrase: CharArray, deriveKey: BackupKdf): List<OtpAccount> {
         val root = parseObject(bytes)
         if (stringMember(root, "app") != APP) throw BackupFormatException("not a rostdav-mfa backup")
         if (numberMember(root, "v") != VERSION) throw BackupFormatException("unsupported backup version")
@@ -92,7 +106,9 @@ object VaultBackup {
         val header = headerText(m.toInt(), t.toInt(), p.toInt(), salt, nonce).toByteArray(Charsets.UTF_8)
         val password = passphraseBytes(passphrase, requireMinimum = false)
         val key = try {
-            VaultKdf.argon2id(password, salt, m.toInt(), t.toInt(), p.toInt(), KEY_BYTES)
+            deriveKey(password, salt, m.toInt(), t.toInt(), p.toInt(), KEY_BYTES)
+        } catch (e: OutOfMemoryError) {
+            throw BackupFormatException(KDF_OUT_OF_MEMORY)
         } finally {
             password.fill(0)
         }
