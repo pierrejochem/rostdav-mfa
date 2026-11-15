@@ -92,7 +92,7 @@ class ApproveScreenTest {
         val clock = Clock { Instant.parse("2026-11-14T12:00:00Z").toEpochMilli() }
         val vm = ApproveViewModel(ChallengeFlow(api, KeyStoreDeviceKey(ctx), "dev_1", clock) { kotlinx.coroutines.awaitCancellation() }, "ch_1")
         var show by mutableStateOf(true)
-        rule.setContent { RustMfaTheme { if (show) ApproveScreen(vm, {}, {}) } }
+        rule.setContent { RustMfaTheme { if (show) ApproveScreen(vm, onClose = {}, onReconnect = {}) } }
         rule.waitForIdle()
         fun secure() = rule.activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE != 0
         assertTrue(secure(), "FLAG_SECURE missing while the Approve screen is shown")

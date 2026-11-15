@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:pathData="M18,54 C18,25 25,18 54,18 C83,18 90,25 90,54 C90,83 83,90 54,90 C25,90 18,83 18,54Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="18" android:startY="18" android:endX="90" android:endY="90"
+                android:startColor="#E8743B" android:endColor="#C4561F"/>
+        </aapt:attr>
+    </path>
+<group android:scaleX="0.12" android:scaleY="0.12" android:translateX="22.08" android:translateY="25.44">
+        <path android:fillColor="#FFFFFF" android:fillType="evenOdd" android:pathData="M120 152H208L240 188H392A24 24 0 0 1 416 212V360A24 24 0 0 1 392 384H120A24 24 0 0 1 96 360V176A24 24 0 0 1 120 152ZM226 290H286V340A8 8 0 0 1 278 348H234A8 8 0 0 1 226 340ZM238 290V266A18 18 0 0 1 274 266V290H264V266A8 8 0 0 0 248 266V290ZM250 316A6 6 0 1 0 262 316A6 6 0 1 0 250 316Z"/>
+        <path android:fillColor="#FFFFFF" android:pathData="M392 92Q392 136 436 136Q392 136 392 180Q392 136 348 136Q392 136 392 92Z"/>
+</group>
+</vector>
