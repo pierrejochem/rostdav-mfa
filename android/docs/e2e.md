@@ -45,6 +45,7 @@ App, from `android/` (JDK: Temurin 21):
 | Expired | Send a request, leave it for more than 90 s | Passed. The poller drops it from Overview; with the Approve screen open the app says "Expired"; the audit list shows "Request expired". |
 | Revoke from the web | Web: Devices & security, revoke the phone (password asked, it is the only second factor) | Passed. Within one poll the app returns to onboarding. |
 | Revoke from the app | App: Devices, Remove on "This phone", confirm | Passed. The server call goes out first, then the keys and the enrollment go and the app returns to onboarding. |
+| Revoke while Approve is open | Open a request in the app, revoke the phone on the web (password asked), wait over 15 s, tap Done | Passed (second run, after a crash fix). The Approve screen stays and says "This phone was removed on the server."; Done restarts at onboarding. |
 | Screen capture block | `adb exec-out screencap -p` on the Approve screen | Passed. The picture is black (`FLAG_SECURE`). |
 | Biometric prompt | The real `BiometricPrompt` with the emulator's fingerprint | Passed on the emulator. A real sensor is in the checklist below. |
 
@@ -56,6 +57,10 @@ The audit list in the app showed the run (newest first): request created, approv
 - After onboarding, Overview showed an empty server and the Approve screen stayed blank, because the enrollment was read once at start.
 - After the phone was removed in the app, the restart came back to a blank Devices tab. It restored the old navigation state.
 - The server limits how many sign-in requests one user can start. After about ten in a few minutes it answered "Too many requests"; restarting the test server cleared it.
+
+### Found after the hold-the-restart change
+
+The first version of the change held the restart but left the poller running. On its next poll it signed a request with the deleted key and the app crashed (`IllegalStateException: no key rustmfa.request`). The hold now cancels the session job and the Approve screen shows the removed-phone result at once.
 
 ### Not covered by the emulator
 

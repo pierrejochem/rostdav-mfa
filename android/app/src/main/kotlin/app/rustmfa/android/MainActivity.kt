@@ -9,8 +9,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.rememberNavController
+import app.rustmfa.android.domain.SessionEndGate
 import app.rustmfa.android.net.ChallengeDetails
 import app.rustmfa.android.push.AndroidNotificationSink
 import app.rustmfa.android.push.PendingPoller
@@ -47,6 +49,8 @@ class MainActivity : FragmentActivity() {
     private val pendingList = mutableStateOf<List<ChallengeDetails>>(emptyList())
     private var poller: PendingPoller? = null
     private var sessionJob: Job? = null
+    private val sessionEnd = SessionEndGate()
+    private val sessionEnded = mutableStateOf(false)
 
     private val askNotifications =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { refreshNotificationState() }
@@ -118,8 +122,15 @@ class MainActivity : FragmentActivity() {
         val app = AppContainer.get(applicationContext)
         app.onSessionEnded = {
             runOnUiThread {
-                Toast.makeText(this, R.string.result_revoked, Toast.LENGTH_LONG).show()
-                restartFresh()
+                // an open Approve screen shows the message itself and restarts when it closes
+                if (sessionEnd.onSessionEnded() == SessionEndGate.Action.RestartNow) {
+                    Toast.makeText(this, R.string.result_revoked, Toast.LENGTH_LONG).show()
+                    restartFresh()
+                } else {
+                    // the keys are gone: nothing may sign another request until the restart
+                    sessionJob?.cancel()
+                    sessionEnded.value = true
+                }
             }
         }
         setContent {
@@ -178,9 +189,13 @@ class MainActivity : FragmentActivity() {
                         approve = { id, onClose ->
                             val e = enrollment
                             if (e != null) {
+                                DisposableEffect(Unit) {
+                                    sessionEnd.approveOpened()
+                                    onDispose { if (sessionEnd.approveClosed()) restartFresh() }
+                                }
                                 val vm: ApproveViewModel =
                                     viewModel(key = id, factory = viewModelFactory { initializer { ApproveViewModel(app.challengeFlow(e), id) } })
-                                ApproveScreen(vm, onClose = onClose, onReconnect = { invalidated ->
+                                ApproveScreen(vm, revoked = sessionEnded.value, onClose = onClose, onReconnect = { invalidated ->
                                     lifecycleScope.launch {
                                         if (invalidated) app.guard.onKeyInvalidated() else app.resetEnrollment()
                                         restartFresh()
