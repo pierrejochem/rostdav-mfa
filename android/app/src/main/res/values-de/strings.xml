@@ -93,6 +93,12 @@
     <string name="settings_devices">Geräte und Aktivität</string>
     <string name="settings_devices_hint">Deine Telefone und die letzten Anmeldungen</string>
     <string name="settings_server">Server</string>
+    <string name="otpauth_error_not_otpauth">Das ist kein Authenticator-Code.</string>
+    <string name="otpauth_error_type">Diese Art von Code wird nicht unterstützt.</string>
+    <string name="otpauth_error_secret">Der geheime Schlüssel fehlt oder ist ungültig.</string>
+    <string name="otpauth_error_settings">Diese Code-Einstellungen werden nicht unterstützt.</string>
+    <string name="otpauth_error_counter">Der Zähler fehlt.</string>
+    <string name="vault_error_generic">Etwas ist schiefgelaufen. Bitte erneut versuchen.</string>
     <plurals name="home_pending_count">
         <item quantity="one">%1$d Anmeldeanfrage wartet</item>
         <item quantity="other">%1$d Anmeldeanfragen warten</item>

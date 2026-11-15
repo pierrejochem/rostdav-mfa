@@ -1,5 +1,7 @@
 package app.rustmfa.android.vault
 
+import app.rustmfa.vault.ImportResult
+import app.rustmfa.vault.OtpAccount
 import app.rustmfa.vault.VaultSession
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,14 +19,16 @@ class VaultRepository(
     val session: VaultSession,
     private val authenticate: suspend () -> Unit,
     private val exists: suspend () -> Boolean,
-) {
+) : VaultGateway {
     private val gate = Mutex()
 
+    override val isUnlocked: Boolean get() = session.isUnlocked
+
     /** True when a vault is stored. Needs no authentication and never decrypts. */
-    suspend fun hasVault(): Boolean = exists()
+    override suspend fun hasVault(): Boolean = exists()
 
     /** Does nothing when the session is already unlocked, so no second prompt appears. */
-    suspend fun unlock() {
+    override suspend fun unlock() {
         if (session.isUnlocked) return
         gate.withLock {
             // re-checked: an unlock that waited here behind another one finds the session open
@@ -34,12 +38,24 @@ class VaultRepository(
         }
     }
 
-    fun appLeft() = session.appLeft()
+    override fun appLeft() = session.appLeft()
 
-    fun appReturned() = session.appReturned()
+    override fun appReturned() = session.appReturned()
 
-    fun lock() = session.lock()
+    override fun lock() = session.lock()
 
     /** Deletes the vault and its key (for a restore or a new vault); the next [unlock] creates an empty one. */
-    suspend fun reset() = gate.withLock { session.reset() }
+    override suspend fun reset() = gate.withLock { session.reset() }
+
+    override fun accounts(): List<OtpAccount> = session.accounts()
+
+    override fun code(id: String, epochSeconds: Long): String = session.code(id, epochSeconds)
+
+    override suspend fun nextHotp(id: String): String = session.nextHotp(id)
+
+    override suspend fun import(accounts: List<OtpAccount>): ImportResult = session.import(accounts)
+
+    override suspend fun update(account: OtpAccount) = session.update(account)
+
+    override suspend fun remove(id: String) = session.remove(id)
 }

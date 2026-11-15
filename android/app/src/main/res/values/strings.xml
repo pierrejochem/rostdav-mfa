@@ -93,6 +93,12 @@
     <string name="settings_devices">Devices and activity</string>
     <string name="settings_devices_hint">Your phones and the latest sign-ins</string>
     <string name="settings_server">Server</string>
+    <string name="otpauth_error_not_otpauth">This is not an authenticator code.</string>
+    <string name="otpauth_error_type">This type of code is not supported.</string>
+    <string name="otpauth_error_secret">The secret key is missing or invalid.</string>
+    <string name="otpauth_error_settings">These code settings are not supported.</string>
+    <string name="otpauth_error_counter">The counter is missing.</string>
+    <string name="vault_error_generic">Something went wrong. Try again.</string>
     <plurals name="home_pending_count">
         <item quantity="one">%1$d sign-in request is waiting</item>
         <item quantity="other">%1$d sign-in requests are waiting</item>
