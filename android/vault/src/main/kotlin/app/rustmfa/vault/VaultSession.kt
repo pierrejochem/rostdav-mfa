@@ -141,6 +141,16 @@ class VaultSession(
     }
 
     /**
+     * Locks the session and deletes the stored vault and its key; the next [open] starts an empty vault.
+     * Takes no mutation lock, so it is never stuck behind a save; mutations in flight or queued fail with
+     * [VaultLockedException] through the generation, as with [lock].
+     */
+    suspend fun reset() {
+        lock()
+        store.reset()
+    }
+
+    /**
      * Applies [change] to the current list, saves the result, then commits it unless [lock] ran meanwhile.
      * [change] returns the new list (sharing unchanged accounts with the old one) or null for "nothing to save".
      */

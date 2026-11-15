@@ -154,6 +154,107 @@ class EncryptedSeedStoreTest {
         assertFalse(first.copyOfRange(6, 18).contentEquals(second.copyOfRange(6, 18)))
     }
 
+
+    @Test
+    fun resetAfterKeyLostThenLoadIsEmptyWithNewKey() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        keys.key = null
+        val fresh = store()
+        assertFailsWith<VaultKeyLostException> { fresh.load() }
+        fresh.reset()
+        assertNull(blobs.bytes)
+        assertEquals(emptyList(), fresh.load())
+        assertTrue(keys.hasKey())
+        fresh.save(accounts)
+        assertEquals(accounts, store().load())
+    }
+
+    @Test
+    fun resetAfterCorruptBlobThenLoadIsEmpty() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        keys.key = ByteArray(32) { 9 }
+        val fresh = store()
+        assertFailsWith<VaultCorruptException> { fresh.load() }
+        fresh.reset()
+        assertEquals(emptyList(), fresh.load())
+    }
+
+    @Test
+    fun resetZeroesTheInMemoryKey() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        val s2 = store()
+        s2.load()
+        val held = keys.unwrapped.last()
+        assertFalse(held.all { it == 0.toByte() })
+        s2.reset()
+        assertZero(held)
+        assertFailsWith<VaultLockedException> { s2.save(accounts) }
+    }
+
+    @Test
+    fun resetDuringSuspendedLoadLeavesStoreLockedAndKeyZeroed() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        keys.unwrapGate = gate
+        val fresh = store()
+        val job = async { runCatching { fresh.load() } }
+        runCurrent()
+        assertEquals(1, keys.unwrapped.size)
+        keys.unwrapGate = null
+        fresh.reset()
+        gate.complete(Unit)
+        assertTrue(job.await().exceptionOrNull() is VaultLockedException)
+        assertZero(keys.unwrapped.first())
+        assertFailsWith<VaultLockedException> { fresh.save(accounts) }
+    }
+
+    @Test
+    fun resetWithNothingIsANoOp() = runTest {
+        store().reset()
+        assertNull(blobs.bytes)
+        assertFalse(keys.hasKey())
+    }
+
+    @Test
+    fun resetWithFailingDestroyStillClearsTheBlobAndRethrows() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        keys.destroyThrows = true
+        val e = assertFailsWith<IllegalStateException> { s.reset() }
+        assertEquals("destroy failed", e.message)
+        assertNull(blobs.bytes)
+    }
+
+    @Test
+    fun resetWithFailingClearStillDestroysTheKeyAndRethrows() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        blobs.clearThrows = true
+        val e = assertFailsWith<IllegalStateException> { s.reset() }
+        assertEquals("clear failed", e.message)
+        assertFalse(keys.hasKey())
+    }
+
+    @Test
+    fun resetWithBothFailingSuppressesTheSecond() = runTest {
+        val s = store()
+        s.load()
+        blobs.clearThrows = true
+        keys.destroyThrows = true
+        val e = assertFailsWith<IllegalStateException> { s.reset() }
+        assertEquals(1, e.suppressed.size)
+    }
+
     private fun assertZero(a: ByteArray) = assertTrue(a.all { it == 0.toByte() }, "key array not zeroed")
 
     @Test

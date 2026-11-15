@@ -6,6 +6,7 @@ class FakeKeyWrapper(var authOpen: Boolean = true) : KeyWrapper {
     var unwrapCalls = 0
     var destroyCalls = 0
     var createThrows = false
+    var destroyThrows = false
 
     /** The array last handed to [create] (the store's own reference). */
     var createdArg: ByteArray? = null
@@ -38,6 +39,7 @@ class FakeKeyWrapper(var authOpen: Boolean = true) : KeyWrapper {
 
     override suspend fun destroy() {
         destroyCalls++
+        if (destroyThrows) throw IllegalStateException("destroy failed")
         key = null
     }
 }
@@ -45,6 +47,7 @@ class FakeKeyWrapper(var authOpen: Boolean = true) : KeyWrapper {
 class MemoryBlobStore : BlobStore {
     var bytes: ByteArray? = null
     var writes = 0
+    var clearThrows = false
 
     override suspend fun read(): ByteArray? = bytes?.copyOf()
 
@@ -54,6 +57,7 @@ class MemoryBlobStore : BlobStore {
     }
 
     override suspend fun clear() {
+        if (clearThrows) throw IllegalStateException("clear failed")
         bytes = null
     }
 }

@@ -84,6 +84,23 @@ class EncryptedSeedStore(
         }
     }
 
+    override suspend fun reset() {
+        // Same discipline as lock(): a load suspended meanwhile sees the new generation and zeroes its key.
+        lock()
+        var failure: Throwable? = null
+        try {
+            blobStore.clear()
+        } catch (e: Throwable) {
+            failure = e
+        }
+        try {
+            keyWrapper.destroy()
+        } catch (e: Throwable) {
+            if (failure == null) failure = e else failure.addSuppressed(e)
+        }
+        if (failure != null) throw failure
+    }
+
     private fun install(key: ByteArray, gen: Long) {
         synchronized(monitor) {
             if (generation != gen) {

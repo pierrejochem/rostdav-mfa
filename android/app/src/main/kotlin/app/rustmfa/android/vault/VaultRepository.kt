@@ -19,4 +19,7 @@ class VaultRepository(val session: VaultSession, private val authenticate: suspe
     fun appReturned() = session.appReturned()
 
     fun lock() = session.lock()
+
+    /** Deletes the vault and its key (for a restore or a new vault); the next [unlock] creates an empty one. */
+    suspend fun reset() = session.reset()
 }

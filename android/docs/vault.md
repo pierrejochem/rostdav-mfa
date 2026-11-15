@@ -17,7 +17,7 @@ The app package `app.rustmfa.android.vault` (in `:app`) holds the Android parts:
 
 - `KeystoreKeyWrapper`: the `KeyWrapper` on an AES-256-GCM key in the Android Keystore.
 - `DataStoreBlobStore`: the `BlobStore` on a Preferences DataStore file, bytes as base64 under one key.
-- `VaultRepository`: `unlock()`, `appLeft()`, `appReturned()`, `lock()` around a `VaultSession`.
+- `VaultRepository`: `unlock()`, `appLeft()`, `appReturned()`, `lock()` and `reset()` around a `VaultSession`.
 - `BiometricUnlocker`: the prompt that opens the Keystore window.
 - `AppContainer.vault` wires these together with `SystemClock::elapsedRealtime` as the clock. `AppContainer.authenticator` is the suspend function the UI sets (it should call `BiometricUnlocker.authenticate`); until it is set, an unlock fails with `VaultAuthRequiredException`.
 
@@ -57,6 +57,7 @@ A UTF-8 JSON object:
 - A closed window gives `VaultAuthRequiredException`. A key that the Keystore invalidated, or a wrapped key that fails its tag, gives `VaultKeyLostException`.
 - Auto-lock: `appLeft()` stores `SystemClock.elapsedRealtime()` when the session is unlocked. `appReturned()` locks the session if at least 60 000 ms passed since then, and does nothing if the app was not left. The clock is monotonic, so changing the wall clock does not keep the vault open.
 - `lock()` zeroes the in-memory accounts and the data key. A mutation (add, update, remove, import, next HOTP) saves first and commits to memory only if the save succeeded and `lock()` did not run meanwhile; otherwise it throws `VaultLockedException`. Mutations are serialised by a mutex. The session copies secrets in and out and zeroes its own arrays on lock.
+- `reset()` (`VaultRepository.reset()`, `VaultSession.reset()`, `SeedStore.reset()`) deletes the stored blob and the wrapped Keystore key and zeroes the in-memory key. It works from the locked state and after a failed load (key lost, corrupt blob, authentication required). The session locks first and takes no mutation lock, so a save in flight or queued fails with `VaultLockedException` and reset is never stuck behind it. If deleting the blob or the key fails, the other is still attempted and the first failure is rethrown with the second suppressed. After `reset()` the session is locked; the next `unlock()` authenticates (opening the Keystore window, which creating the new wrapped key needs) and opens an empty vault. Both a restore and a new vault go through this.
 - `code(id, epochSeconds)` is for TOTP accounts, `nextHotp(id)` saves the incremented counter before it returns the code.
 
 ## Accepted risks
@@ -85,4 +86,4 @@ These are obligations the reviews found for the code that will call the vault co
 - Serialise `unlock()` calls. Two concurrent callers on a locked vault can both show a prompt.
 - Call `appLeft()` when the app goes to the background and `appReturned()` when it comes back, from the lifecycle. Without them the vault never auto-locks.
 - Nudge users to make a backup. Removing the lock screen destroys the vault, and a backup is the only way back.
-- Handle `VaultKeyLostException` by offering to restore from a backup (and to start a new vault, which needs `destroy` of the old wrapper state to be exposed first). Handle `VaultCorruptException` the same way. Treat `VaultAuthRequiredException` as "the user cancelled or failed", not as an error to report.
+- Handle `VaultKeyLostException` and `VaultCorruptException`: `unlock()` fails with them on every attempt while the old blob stays, so the only way out is `VaultRepository.reset()`. Offer a restore from a backup or an empty new vault (confirm first, since reset deletes what is left). Both work the same way: call `reset()`, then `unlock()` (the user authenticates again; this creates the new key and an empty vault), then for a restore `VaultSession.import(VaultBackup.import(bytes, passphrase))`. Decrypt the backup before calling `reset()`, so a wrong passphrase does not cost the user the old state. Treat `VaultAuthRequiredException` as "the user cancelled or failed", not as an error to report.

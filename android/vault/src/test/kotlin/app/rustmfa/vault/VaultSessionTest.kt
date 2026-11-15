@@ -15,6 +15,7 @@ class FakeSeedStore(var stored: List<OtpAccount> = emptyList()) : SeedStore {
     val events = mutableListOf<String>()
     var saves = 0
     var lockCalls = 0
+    var resets = 0
     var failSave = false
     var saveGate: CompletableDeferred<Unit>? = null
     var lastSaved: List<OtpAccount> = emptyList()
@@ -28,6 +29,11 @@ class FakeSeedStore(var stored: List<OtpAccount> = emptyList()) : SeedStore {
         events += "save"
         lastSaved = accounts.map { it.copy(secret = it.secret.copyOf()) }
         stored = lastSaved
+    }
+
+    override suspend fun reset() {
+        resets++
+        stored = emptyList()
     }
 
     override fun lock() {
@@ -230,6 +236,60 @@ class VaultSessionTest {
         assertEquals(1, store.saves)
     }
 
+
+    @Test
+    fun resetLocksThenOpenIsEmpty() = runTest {
+        val s = session()
+        s.open()
+        s.reset()
+        assertFalse(s.isUnlocked)
+        assertEquals(1, store.resets)
+        s.open()
+        assertEquals(emptyList(), s.accounts())
+    }
+
+    @Test
+    fun resetDuringGatedSaveDoesNotWaitAndFailsTheSaver() = runTest {
+        val s = session()
+        s.open()
+        val gate = CompletableDeferred<Unit>()
+        store.saveGate = gate
+        val job = async { runCatching { s.nextHotp("h1") } }
+        val queued = async { runCatching { s.add(totp) } }
+        runCurrent()
+        s.reset()
+        assertEquals(1, store.resets)
+        assertFalse(s.isUnlocked)
+        gate.complete(Unit)
+        runCurrent()
+        assertTrue(job.await().exceptionOrNull() is VaultLockedException)
+        assertTrue(queued.await().exceptionOrNull() is VaultLockedException)
+        assertFalse(s.isUnlocked)
+    }
+
+    @Test
+    fun restoreFlowAfterKeyLost() = runTest {
+        var lost = true
+        val inner = FakeSeedStore()
+        val lossy = object : SeedStore by inner {
+            override suspend fun load(): List<OtpAccount> {
+                if (lost) throw VaultKeyLostException()
+                return inner.load()
+            }
+
+            override suspend fun reset() {
+                lost = false
+                inner.reset()
+            }
+        }
+        val s = VaultSession(lossy, { now }, newId = { "id${ids++}" })
+        assertFailsWith<VaultKeyLostException> { s.open() }
+        s.reset()
+        s.open()
+        assertEquals(ImportResult(2, 0), s.import(listOf(totp, hotp)))
+        assertEquals(listOf(totp.copy(id = "id0"), hotp.copy(id = "id1")), s.accounts())
+    }
+
     @Test
     fun lockDuringInFlightSaveCannotResurrect() = runTest {
         val s = session()
@@ -269,6 +329,7 @@ class VaultSessionTest {
             val gate = CompletableDeferred<Unit>()
             override suspend fun load(): List<OtpAccount> { gate.await(); return listOf(totp.copy(secret = rfc4226.copyOf())) }
             override suspend fun save(accounts: List<OtpAccount>) {}
+            override suspend fun reset() {}
         }
         val s2 = VaultSession(slow, { now })
         val job = async { runCatching { s2.open() } }

@@ -24,6 +24,10 @@ class VaultRepositoryTest {
 
             override suspend fun save(accounts: List<OtpAccount>) {}
 
+            override suspend fun reset() {
+                events += "store.reset"
+            }
+
             override fun lock() {
                 events += "store.lock"
             }
@@ -84,5 +88,19 @@ class VaultRepositoryTest {
         repo.unlock()
         repo.lock()
         assertFalse(session.isUnlocked)
+    }
+
+    @Test
+    fun `reset delegates and the next unlock authenticates once and opens`() = runTest {
+        val repo = repository()
+        repo.unlock()
+        events.clear()
+        repo.reset()
+        assertFalse(session.isUnlocked)
+        assertEquals(listOf("store.lock", "store.reset"), events)
+        events.clear()
+        repo.unlock()
+        assertEquals(listOf("auth", "load"), events)
+        assertTrue(session.isUnlocked)
     }
 }

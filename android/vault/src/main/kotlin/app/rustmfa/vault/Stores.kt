@@ -6,6 +6,12 @@ interface SeedStore {
 
     /** Drops the in-memory data key. */
     fun lock() {}
+
+    /**
+     * Drops the data key and deletes the stored blob and wrapped key, so the next [load] is a first use.
+     * Works from any state, including after a failed [load].
+     */
+    suspend fun reset()
 }
 
 /** Wraps the random data key with the Keystore. [create] and [unwrap] throw [VaultAuthRequiredException] outside the auth window. */
