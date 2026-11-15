@@ -1,5 +1,7 @@
 package app.rustmfa.vault
 
+import kotlinx.coroutines.async
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -104,7 +106,14 @@ class EncryptedSeedStoreTest {
     @Test
     fun shortBlobIsCorrupt() = runTest {
         store().load()
-        blobs.bytes = ByteArray(6 + 12 + 15)
+        blobs.bytes = "RMFAV1".toByteArray() + ByteArray(26)
+        assertFailsWith<VaultCorruptException> { store().load() }
+    }
+
+    @Test
+    fun emptyBlobIsCorrupt() = runTest {
+        store().load()
+        blobs.bytes = ByteArray(0)
         assertFailsWith<VaultCorruptException> { store().load() }
     }
 
@@ -143,5 +152,87 @@ class EncryptedSeedStoreTest {
         val second = assertNotNull(blobs.bytes)
         assertFalse(first.contentEquals(second))
         assertFalse(first.copyOfRange(6, 18).contentEquals(second.copyOfRange(6, 18)))
+    }
+
+    private fun assertZero(a: ByteArray) = assertTrue(a.all { it == 0.toByte() }, "key array not zeroed")
+
+    @Test
+    fun lockZeroesTheDataKey() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        val s2 = store()
+        s2.load()
+        val held = keys.unwrapped.last()
+        assertFalse(held.all { it == 0.toByte() })
+        s2.lock()
+        assertZero(held)
+    }
+
+    @Test
+    fun corruptLoadZeroesTheUnwrappedKey() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        val b = blobs.bytes!!
+        b[b.size - 1] = (b[b.size - 1].toInt() xor 1).toByte()
+        assertFailsWith<VaultCorruptException> { store().load() }
+        assertZero(keys.unwrapped.last())
+    }
+
+    @Test
+    fun reloadZeroesThePreviousKey() = runTest {
+        val s = store()
+        s.load()
+        val first = keys.createdArg!!
+        assertFalse(first.all { it == 0.toByte() })
+        s.load()
+        assertZero(first)
+        val second = keys.unwrapped.last()
+        assertFalse(second.all { it == 0.toByte() })
+        s.load()
+        assertZero(second)
+    }
+
+    @Test
+    fun lockDuringSuspendedLoadLeavesStoreLockedAndKeyZeroed() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        s.lock()
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        keys.unwrapGate = gate
+        val fresh = store()
+        val job = async { runCatching { fresh.load() } }
+        runCurrent()
+        assertEquals(1, keys.unwrapped.size)
+        fresh.lock()
+        gate.complete(Unit)
+        val result = job.await()
+        assertTrue(result.exceptionOrNull() is VaultLockedException)
+        assertZero(keys.unwrapped.last())
+        assertFailsWith<VaultLockedException> { fresh.save(accounts) }
+    }
+
+    @Test
+    fun lockDuringSuspendedLoadWithoutBlobZeroesTheKey() = runTest {
+        store().load()
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        keys.unwrapGate = gate
+        val fresh = store()
+        val job = async { runCatching { fresh.load() } }
+        runCurrent()
+        fresh.lock()
+        gate.complete(Unit)
+        assertTrue(job.await().exceptionOrNull() is VaultLockedException)
+        assertZero(keys.unwrapped.last())
+    }
+
+    @Test
+    fun failedCreateDestroysTheKeyAndZeroesIt() = runTest {
+        keys.createThrows = true
+        assertFailsWith<IllegalStateException> { store().load() }
+        assertEquals(1, keys.destroyCalls)
+        assertZero(keys.createdArg!!)
     }
 }

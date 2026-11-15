@@ -6,15 +6,24 @@ import javax.crypto.AEADBadTagException
 /**
  * Seeds encrypted under a random 32-byte data key. The blob is magic "RMFAV1", a 12-byte nonce, then
  * AES-256-GCM ciphertext and tag, with the magic as associated data. The [KeyWrapper] holds the data key.
+ *
+ * Threading: [lock] may be called from any thread. The in-memory data key and a lock generation counter are
+ * guarded by a private monitor: [lock], taking the key for use in [save], and installing a key in [load] all
+ * happen under it, so [lock] never zeroes a key mid-encryption. [load] captures the generation before its first
+ * suspension; if [lock] ran meanwhile, the freshly obtained key is zeroed and [VaultLockedException] is thrown,
+ * so the store never ends up unlocked after [lock] returned.
  */
 class EncryptedSeedStore(
     private val keyWrapper: KeyWrapper,
     private val blobStore: BlobStore,
     private val random: SecureRandom = SecureRandom(),
 ) : SeedStore {
+    private val monitor = Any()
     private var dataKey: ByteArray? = null
+    private var generation = 0L
 
     override suspend fun load(): List<OtpAccount> {
+        val gen = synchronized(monitor) { generation }
         val blob = blobStore.read()
         val hasKey = keyWrapper.hasKey()
         if (blob == null && !hasKey) {
@@ -25,20 +34,25 @@ class EncryptedSeedStore(
                 keyWrapper.create(fresh)
             } catch (e: Throwable) {
                 fresh.fill(0)
+                try {
+                    keyWrapper.destroy()
+                } catch (d: Throwable) {
+                    e.addSuppressed(d)
+                }
                 throw e
             }
-            replaceKey(fresh)
+            install(fresh, gen)
             return emptyList()
         }
         if (!hasKey) throw VaultKeyLostException()
         val key = keyWrapper.unwrap()
         if (blob == null) {
-            replaceKey(key)
+            install(key, gen)
             return emptyList()
         }
         try {
             val accounts = decryptBlob(key, blob)
-            replaceKey(key)
+            install(key, gen)
             return accounts
         } catch (e: Throwable) {
             key.fill(0)
@@ -47,26 +61,38 @@ class EncryptedSeedStore(
     }
 
     override suspend fun save(accounts: List<OtpAccount>) {
-        val key = dataKey ?: throw VaultLockedException()
         val nonce = ByteArray(NONCE_SIZE)
         random.nextBytes(nonce)
         val plain = VaultAccountsJson.encode(accounts)
-        try {
-            val ct = VaultCipher.encrypt(key, nonce, MAGIC, plain)
-            blobStore.write(MAGIC + nonce + ct)
+        val blob = try {
+            // Non-suspending, so the monitor is held for the whole use of the key.
+            synchronized(monitor) {
+                val key = dataKey ?: throw VaultLockedException()
+                MAGIC + nonce + VaultCipher.encrypt(key, nonce, MAGIC, plain)
+            }
         } finally {
             plain.fill(0)
         }
+        blobStore.write(blob)
     }
 
     override fun lock() {
-        dataKey?.fill(0)
-        dataKey = null
+        synchronized(monitor) {
+            generation++
+            dataKey?.fill(0)
+            dataKey = null
+        }
     }
 
-    private fun replaceKey(key: ByteArray) {
-        dataKey?.fill(0)
-        dataKey = key
+    private fun install(key: ByteArray, gen: Long) {
+        synchronized(monitor) {
+            if (generation != gen) {
+                key.fill(0)
+                throw VaultLockedException()
+            }
+            dataKey?.fill(0)
+            dataKey = key
+        }
     }
 
     private fun decryptBlob(key: ByteArray, blob: ByteArray): List<OtpAccount> {
