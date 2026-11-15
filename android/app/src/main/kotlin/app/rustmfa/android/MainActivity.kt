@@ -77,6 +77,9 @@ class MainActivity : FragmentActivity() {
         }
     }
 
+    /** This activity's prompt; onStop removes it only if a newer activity has not put its own in place. */
+    private val authenticator: suspend () -> Unit = { withContext(Dispatchers.Main) { BiometricUnlocker(this@MainActivity).authenticate() } }
+
     private val askNotifications =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { refreshNotificationState() }
 
@@ -106,14 +109,16 @@ class MainActivity : FragmentActivity() {
         super.onStart()
         poller?.setForeground(true)
         // the prompt needs a started activity and the main thread
-        AppContainer.get(applicationContext).authenticator = { withContext(Dispatchers.Main) { BiometricUnlocker(this@MainActivity).authenticate() } }
+        AppContainer.get(applicationContext).authenticator = authenticator
         vault.appReturned()
     }
 
     override fun onStop() {
         poller?.setForeground(false)
         vault.appLeft()
-        AppContainer.get(applicationContext).authenticator = AppContainer.NO_AUTHENTICATOR
+        // after restartFresh() the new activity has already started (and set its own) when this one stops
+        val app = AppContainer.get(applicationContext)
+        if (app.authenticator === authenticator) app.authenticator = AppContainer.NO_AUTHENTICATOR
         super.onStop()
     }
 
