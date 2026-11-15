@@ -16,6 +16,7 @@ Taken on the emulator against a real Rostdav, dark first, then light. The Approv
 ## Modules
 
 - `:contract` is a plain JVM module with the byte-exact logic (canonical strings, request signing, signature encoding). Its tests read the shared vectors `../contract/vectors/v1.json`, the same file the Rust tests use.
+- `:vault` is the vault core, a plain JVM module: TOTP and HOTP, otpauth URIs, the encrypted seed store, the unlocked session with auto-lock and the passphrase-encrypted backup. Argon2id comes from Bouncy Castle. `docs/vault.md` has the formats and rules. There is no vault screen yet.
 - `:app` is the Android application, package `app.rustmfa.android`, with the flavors `nopush` (default) and `fcm`.
 
 ## Build
@@ -31,7 +32,7 @@ Use a JDK that is not GraalVM. The `jlink` of GraalVM CE fails inside the Androi
 
 ## Test
 
-    ./gradlew :contract:test :app:testNopushDebugUnitTest :app:lintNopushDebug
+    ./gradlew :contract:test :vault:test :app:testNopushDebugUnitTest :app:lintNopushDebug
 
 The emulator tests need a running device (the debug build allows cleartext HTTP for the test server):
 
