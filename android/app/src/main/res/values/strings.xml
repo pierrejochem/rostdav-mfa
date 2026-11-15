@@ -129,6 +129,7 @@
     <string name="vault_field_service">Service</string>
     <string name="vault_field_account">Account name</string>
     <string name="vault_delete_text">Delete %1$s? You can only get it back from a backup, or by adding it again at the service.</string>
+    <string name="vault_unlock_to_save">Unlock to save</string>
     <string name="vault_hotp_next">Next code</string>
     <plurals name="vault_row_description">
         <item quantity="one">%1$s, %2$d second left</item>

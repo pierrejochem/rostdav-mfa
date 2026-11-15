@@ -15,7 +15,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,23 +64,30 @@ fun AccountActions(
     onUpdate: (id: String, issuer: String, label: String) -> Unit,
     onDelete: (String) -> Unit,
 ) {
-    var editing by remember { mutableStateOf<AccountRow?>(null) }
-    var deleting by remember { mutableStateOf<AccountRow?>(null) }
+    // ids, not rows: they survive a rotation, and the row is read from the live state every time
+    var editingId by rememberSaveable { mutableStateOf<String?>(null) }
+    var deletingId by rememberSaveable { mutableStateOf<String?>(null) }
     val rows = (state as? VaultUiState.Unlocked)?.rows.orEmpty()
     val selected = openId?.let { id -> rows.firstOrNull { it.id == id } }
+    val editing = editingId?.let { id -> rows.firstOrNull { it.id == id } }
+    val deleting = deletingId?.let { id -> rows.firstOrNull { it.id == id } }
+    // a row that is gone (deleted elsewhere) or a vault that locked closes whatever is open for it
+    LaunchedEffect(openId, selected == null) { if (openId != null && selected == null) onClose() }
+    LaunchedEffect(editingId, editing == null) { if (editingId != null && editing == null) editingId = null }
+    LaunchedEffect(deletingId, deleting == null) { if (deletingId != null && deleting == null) deletingId = null }
     if (selected != null) {
         AccountSheet(
             selected,
             onCopy = { if (selected.type == OtpType.HOTP && selected.code == null) onGenerate(selected.id) else onCopy(selected.id) },
-            onEdit = { editing = selected },
-            onDelete = { deleting = selected },
+            onEdit = { editingId = selected.id },
+            onDelete = { deletingId = selected.id },
             onDismiss = onClose,
         )
     }
-    editing?.let { row ->
-        EditAccountDialog(row, { i, l -> onUpdate(row.id, i, l); editing = null }, { editing = null })
+    if (editing != null) {
+        EditAccountDialog(editing, { i, l -> onUpdate(editing.id, i, l); editingId = null }, { editingId = null })
     }
-    deleting?.let { row ->
-        DeleteAccountDialog(row, { onDelete(row.id); deleting = null }, { deleting = null })
+    if (deleting != null) {
+        DeleteAccountDialog(deleting, { onDelete(deleting.id); deletingId = null }, { deletingId = null })
     }
 }

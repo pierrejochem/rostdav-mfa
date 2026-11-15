@@ -142,11 +142,13 @@ class AccountSheetTest {
         rule.onNodeWithText("Cancel").assertIsDisplayed()
     }
 
+    private val liveState = androidx.compose.runtime.mutableStateOf<VaultUiState>(VaultUiState.Unlocked(listOf(github, counter)))
+
     private fun host(openId: String?) =
         show {
-            var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(openId) }
+            var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(openId) }
             AccountActions(
-                state = VaultUiState.Unlocked(listOf(github, counter)),
+                state = liveState.value,
                 openId = open,
                 onClose = { calls += "close"; open = null },
                 onCopy = { calls += "copy:$it" },
@@ -184,5 +186,62 @@ class AccountSheetTest {
         assertEquals(listOf("close"), calls)
         rule.onNodeWithText("Delete").performClick()
         assertEquals(listOf("close", "delete:t1"), calls)
+    }
+
+    private fun openEditor() {
+        host("t1")
+        rule.onNodeWithText("Edit").performClick()
+        rule.onNodeWithText("Save").assertIsDisplayed()
+    }
+
+    @Test fun theEditDialogClosesWhenTheRowVanishes() {
+        openEditor()
+        rule.runOnIdle { liveState.value = VaultUiState.Unlocked(listOf(counter)) }
+        rule.onNodeWithText("Save").assertDoesNotExist()
+    }
+
+    @Test fun theEditDialogClosesWhenTheVaultLocks() {
+        openEditor()
+        rule.runOnIdle { liveState.value = VaultUiState.Locked }
+        rule.onNodeWithText("Save").assertDoesNotExist()
+    }
+
+    @Test fun theDeleteDialogClosesWhenTheRowVanishes() {
+        host("t1")
+        rule.onNodeWithText("Delete").performClick()
+        rule.onNodeWithText("Delete GitHub?$text").assertIsDisplayed()
+        rule.runOnIdle { liveState.value = VaultUiState.Unlocked(listOf(counter)) }
+        rule.onNodeWithText("Delete GitHub?$text").assertDoesNotExist()
+    }
+
+    @Test fun theSheetClosesWhenTheVaultLocks() {
+        host("t1")
+        rule.onNodeWithText("Copy").assertIsDisplayed()
+        rule.runOnIdle { liveState.value = VaultUiState.Locked }
+        rule.onNodeWithText("Copy").assertDoesNotExist()
+        assertEquals(listOf("close"), calls)
+    }
+
+    @Test fun theEditDialogAndTypedTextSurviveRecreation() {
+        val tester = androidx.compose.ui.test.junit4.StateRestorationTester(rule)
+        tester.setContent {
+            RustMfaTheme {
+                var open by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf<String?>("t1") }
+                AccountActions(
+                    VaultUiState.Unlocked(listOf(github, counter)), open, { open = null }, {}, {}, { _, _, _ -> }, {},
+                )
+            }
+        }
+        rule.onNodeWithText("Edit").performClick()
+        rule.onAllNodes(hasSetTextAction())[0].performTextClearance()
+        rule.onAllNodes(hasSetTextAction())[0].performTextInput("Typed")
+        tester.emulateSavedInstanceStateRestore()
+        rule.onNodeWithText("Typed").assertIsDisplayed()
+        rule.onNodeWithText("Save").assertIsDisplayed()
+    }
+
+    @Test fun theUnlockToSaveMessageReads() {
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        assertEquals("Unlock to save", ctx.getString(app.rustmfa.android.R.string.vault_unlock_to_save))
     }
 }

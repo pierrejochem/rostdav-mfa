@@ -33,6 +33,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -50,6 +51,7 @@ import app.rustmfa.android.ui.vault.SecureWhile
 import app.rustmfa.android.vault.BackupFiles
 import app.rustmfa.android.vault.BiometricUnlocker
 import app.rustmfa.android.vault.VaultEvent
+import app.rustmfa.android.vault.toastMessage
 import app.rustmfa.android.vault.VaultUiState
 import app.rustmfa.android.vault.VaultViewModel
 import android.net.Uri
@@ -173,15 +175,14 @@ class MainActivity : FragmentActivity() {
         setContent {
             val vaultState by vault.state.collectAsState()
             val showNudge by vault.showNudge.collectAsState()
-            var menuId by remember { mutableStateOf<String?>(null) }
+            var menuId by rememberSaveable { mutableStateOf<String?>(null) }
             SecureWhile(vaultState is VaultUiState.Unlocked || vaultState == VaultUiState.Empty)
             LaunchedEffect(Unit) {
                 vault.events.collect { e ->
                     when (e) {
                         // Android 13+ confirms a copy itself
                         VaultEvent.Copied -> if (Build.VERSION.SDK_INT < 33) Toast.makeText(this@MainActivity, R.string.vault_copied, Toast.LENGTH_SHORT).show()
-                        is VaultEvent.Failed -> Toast.makeText(this@MainActivity, e.messageRes, Toast.LENGTH_LONG).show()
-                        else -> Unit // the add and edit forms (later tasks) handle the rest
+                        else -> e.toastMessage()?.let { Toast.makeText(this@MainActivity, it, Toast.LENGTH_LONG).show() }
                     }
                 }
             }

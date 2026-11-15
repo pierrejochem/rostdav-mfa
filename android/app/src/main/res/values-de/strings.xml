@@ -129,6 +129,7 @@
     <string name="vault_field_service">Dienst</string>
     <string name="vault_field_account">Kontoname</string>
     <string name="vault_delete_text">%1$s löschen? Du kannst es nur aus einem Backup oder durch erneutes Hinzufügen beim Dienst zurückholen.</string>
+    <string name="vault_unlock_to_save">Zum Speichern entsperren</string>
     <string name="vault_hotp_next">Nächster Code</string>
     <plurals name="vault_row_description">
         <item quantity="one">%1$s, noch %2$d Sekunde</item>

@@ -13,7 +13,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -24,8 +24,8 @@ import app.rustmfa.android.vault.AccountRow
 /** Changes the service and the account name; Save is off while both are blank. */
 @Composable
 fun EditAccountDialog(row: AccountRow, onSave: (issuer: String, label: String) -> Unit, onDismiss: () -> Unit) {
-    var issuer by remember { mutableStateOf(row.issuer) }
-    var label by remember { mutableStateOf(row.label) }
+    var issuer by rememberSaveable(row.id) { mutableStateOf(row.issuer) }
+    var label by rememberSaveable(row.id) { mutableStateOf(row.label) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.vault_edit_title)) },

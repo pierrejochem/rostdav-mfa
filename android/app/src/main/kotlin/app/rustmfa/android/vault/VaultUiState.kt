@@ -1,6 +1,7 @@
 package app.rustmfa.android.vault
 
 import androidx.annotation.StringRes
+import app.rustmfa.android.R
 
 sealed interface VaultUiState {
     data object Loading : VaultUiState
@@ -31,3 +32,12 @@ sealed interface VaultEvent {
     /** A save needed the prompt and the user cancelled it; the form stays. */
     data object UnlockToSave : VaultEvent
 }
+
+/** The toast text for an event that is shown as one (the add forms show their own); null for the rest. */
+@StringRes
+fun VaultEvent.toastMessage(): Int? =
+    when (this) {
+        VaultEvent.UnlockToSave -> R.string.vault_unlock_to_save
+        is VaultEvent.Failed -> messageRes
+        VaultEvent.Copied, VaultEvent.Added, VaultEvent.Duplicate -> null
+    }
