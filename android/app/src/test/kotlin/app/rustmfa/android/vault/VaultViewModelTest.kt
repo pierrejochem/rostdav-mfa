@@ -18,8 +18,16 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -48,7 +56,16 @@ class VaultViewModelTest {
 
     @BeforeTest fun setUp() = Dispatchers.setMain(main)
 
-    @AfterTest fun tearDown() = Dispatchers.resetMain()
+    /** Stands in for the app-wide scope of AppContainer: it outlives the view model. */
+    private val appScope = CoroutineScope(SupervisorJob() + main)
+
+    @AfterTest fun tearDown() {
+        appScope.cancel()
+        Dispatchers.resetMain()
+    }
+
+    /** How many values the ticker produced: it only runs while it is collected. */
+    private var ticks = 0
 
     private class FakeClipboard : ClipboardWriter {
         val copied = mutableListOf<String>()
@@ -78,7 +95,10 @@ class VaultViewModelTest {
     private var finished = false
 
     private fun viewModel() =
-        VaultViewModel(gateway, clock, clipboard, prefs, NoFiles, ticker = secondTicker(clock).takeWhile { !finished })
+        VaultViewModel(
+            gateway, clock, clipboard, prefs, NoFiles, appScope,
+            ticker = secondTicker(clock).takeWhile { !finished }.onEach { ticks++ },
+        )
 
     private fun vaultTest(body: suspend TestScope.() -> Unit) = runTest(main) {
         try {
@@ -352,5 +372,50 @@ class VaultViewModelTest {
         gateway.stored = emptyList()
         val vm = viewModel()
         assertFalse(vm.showNudge.value)
+    }
+
+    @Test
+    fun `the ticker sleeps while the app is in the background and resumes on return`() = vaultTest {
+        openVault(totp)
+        val vm = viewModel()
+        advanceTimeBy(2_000)
+        runCurrent()
+        assertTrue(ticks >= 2)
+        vm.appLeft()
+        val atLeave = ticks
+        advanceTimeBy(10_000)
+        runCurrent()
+        assertEquals(atLeave, ticks, "the ticker woke while the app was in the background")
+        vm.appReturned()
+        runCurrent()
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertTrue(ticks > atLeave, "the ticker did not resume on return")
+        assertIs<VaultUiState.Unlocked>(vm.state.value)
+    }
+
+    @Test
+    fun `copying a generated HOTP code after a lock copies nothing and shows Locked`() = vaultTest {
+        openVault(hotp)
+        val vm = viewModel()
+        val id = vm.rows().single().id
+        vm.generateHotp(id)
+        gateway.session.lock()
+        vm.copy(id)
+        assertTrue(clipboard.copied.isEmpty(), "a code was copied from a locked vault")
+        assertEquals(VaultUiState.Locked, vm.state.value)
+    }
+
+    @Test
+    fun `the clipboard is still cleared after the view model is gone`() = vaultTest {
+        openVault(totp)
+        val store = ViewModelStore()
+        val vm = ViewModelProvider.create(store, viewModelFactory { initializer { viewModel() } })[VaultViewModel::class]
+        vm.copy(vm.rows().single().id)
+        assertEquals(1, clipboard.copied.size)
+        store.clear()
+        advanceTimeBy(CLIPBOARD_CLEAR_MILLIS)
+        runCurrent()
+        assertEquals(clipboard.copied, clipboard.cleared)
     }
 }

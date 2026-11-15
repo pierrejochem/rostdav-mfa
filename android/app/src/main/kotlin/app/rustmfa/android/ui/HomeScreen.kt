@@ -34,7 +34,7 @@ import app.rustmfa.android.ui.design.screenPadding
 
 private const val OVERVIEW_ROWS = 3
 
-/** The overview: greeting, the protected banner, the newest requests and the slot for the vault. */
+/** The overview: greeting, the protected banner, the newest requests and the [accounts] slot for the vault. */
 @Composable
 fun HomeScreen(
     server: String,
@@ -42,6 +42,7 @@ fun HomeScreen(
     notificationsOff: Boolean,
     onOpen: (String) -> Unit,
     onSeeAll: () -> Unit,
+    accounts: @Composable ColumnScope.() -> Unit = {},
 ) {
     Column(
         Modifier.fillMaxSize().brandWash().verticalScroll(rememberScrollState()).screenPadding(),
@@ -63,11 +64,7 @@ fun HomeScreen(
                 if (pending.size > OVERVIEW_ROWS) ListRow(stringResource(R.string.home_see_all), trailing = pending.size.toString(), onClick = onSeeAll)
             }
         }
-        Eyebrow(stringResource(R.string.home_accounts))
-        DashedCard {
-            Text(stringResource(R.string.home_vault_title), style = MaterialTheme.typography.titleSmall)
-            Text(stringResource(R.string.home_vault_planned), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        accounts()
     }
 }
 
@@ -100,8 +97,9 @@ fun Eyebrow(text: String) {
     Text(text.uppercase(), style = EyebrowStyle, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
+/** A dashed outline card: the look of the Accounts section before a vault exists. */
 @Composable
-private fun DashedCard(content: @Composable ColumnScope.() -> Unit) {
+internal fun DashedCard(content: @Composable ColumnScope.() -> Unit) {
     val line = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
     Column(
         Modifier.fillMaxWidth().drawBehind {

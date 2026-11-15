@@ -89,7 +89,6 @@
     <string name="home_see_all">Alle anzeigen</string>
     <string name="home_accounts">Konten</string>
     <string name="home_vault_title">Authenticator-Tresor</string>
-    <string name="home_vault_planned">Geplant. Deine Einmalcodes liegen hier, verschlüsselt auf diesem Telefon.</string>
     <string name="settings_devices">Geräte und Aktivität</string>
     <string name="settings_devices_hint">Deine Telefone und die letzten Anmeldungen</string>
     <string name="settings_server">Server</string>
@@ -106,5 +105,27 @@
     <plurals name="badge_waiting">
         <item quantity="one">%1$d wartet</item>
         <item quantity="other">%1$d warten</item>
+    </plurals>
+    <string name="vault_add_first">Erstes Konto hinzufügen</string>
+    <string name="vault_locked">Tresor gesperrt</string>
+    <string name="vault_unlock">Entsperren</string>
+    <string name="vault_empty">Noch keine Konten</string>
+    <string name="vault_add">Konto hinzufügen</string>
+    <string name="vault_lock_now">Jetzt sperren</string>
+    <string name="vault_tap_to_generate">Tippen zum Erzeugen</string>
+    <string name="vault_copied">Kopiert</string>
+    <string name="vault_needs_reset">Der Tresor kann nicht geöffnet werden</string>
+    <string name="vault_restore">Aus einer Sicherung wiederherstellen</string>
+    <string name="vault_new">Neuen Tresor anlegen</string>
+    <string name="vault_nudge_title">Noch keine Sicherung</string>
+    <string name="vault_nudge_backup">Sicherung erstellen</string>
+    <string name="vault_nudge_later">Später</string>
+    <string name="vault_action_copy">Kopieren</string>
+    <string name="vault_action_edit">Bearbeiten</string>
+    <string name="vault_action_delete">Löschen</string>
+    <string name="vault_hotp_next">Nächster Code</string>
+    <plurals name="vault_row_description">
+        <item quantity="one">%1$s, noch %2$d Sekunde</item>
+        <item quantity="other">%1$s, noch %2$d Sekunden</item>
     </plurals>
 </resources>

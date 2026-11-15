@@ -14,12 +14,19 @@ import app.rustmfa.android.enroll.Enrollment
 import app.rustmfa.android.net.ClockSkew
 import app.rustmfa.android.net.RequestSigner
 import android.os.SystemClock
+import app.rustmfa.android.vault.AndroidClipboardWriter
+import app.rustmfa.android.vault.AndroidVaultPrefs
+import app.rustmfa.android.vault.ClipboardWriter
 import app.rustmfa.android.vault.DataStoreBlobStore
+import app.rustmfa.android.vault.VaultPrefs
 import app.rustmfa.android.vault.KeystoreKeyWrapper
 import app.rustmfa.android.vault.VaultRepository
 import app.rustmfa.vault.EncryptedSeedStore
 import app.rustmfa.vault.VaultAuthRequiredException
 import app.rustmfa.vault.VaultSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -49,8 +56,18 @@ class AppContainer private constructor(private val context: Context) {
         notifierFor?.takeIf { it.first == e.deviceId }?.second
             ?: ChallengeNotifier(signedApi(e), sink, skew).also { notifierFor = e.deviceId to it }
 
-    /** Set by the UI when it has an activity; until then an unlock fails with [VaultAuthRequiredException]. */
-    @Volatile var authenticator: suspend () -> Unit = { throw VaultAuthRequiredException() }
+    /**
+     * Set by a started activity (its prompt); [NO_AUTHENTICATOR] otherwise, so an unlock without a screen fails
+     * with [VaultAuthRequiredException].
+     */
+    @Volatile var authenticator: suspend () -> Unit = NO_AUTHENTICATOR
+
+    /** Lives as long as the process: work that must outlast an activity, like the clipboard clear. */
+    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    val clipboard: ClipboardWriter by lazy { AndroidClipboardWriter(context) }
+
+    val vaultPrefs: VaultPrefs by lazy { AndroidVaultPrefs(context) }
 
     /** The auto-lock clock is monotonic, so changing the wall clock cannot keep the vault open. */
     val vault: VaultRepository by lazy {
@@ -92,6 +109,9 @@ class AppContainer private constructor(private val context: Context) {
     }
 
     companion object {
+        /** The authenticator while no activity is started. */
+        val NO_AUTHENTICATOR: suspend () -> Unit = { throw VaultAuthRequiredException() }
+
         @Volatile private var instance: AppContainer? = null
 
         fun get(context: Context): AppContainer =

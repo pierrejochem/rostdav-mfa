@@ -89,7 +89,6 @@
     <string name="home_see_all">See all</string>
     <string name="home_accounts">Accounts</string>
     <string name="home_vault_title">Authenticator vault</string>
-    <string name="home_vault_planned">Planned. Your one-time codes will live here, encrypted on this phone.</string>
     <string name="settings_devices">Devices and activity</string>
     <string name="settings_devices_hint">Your phones and the latest sign-ins</string>
     <string name="settings_server">Server</string>
@@ -106,5 +105,27 @@
     <plurals name="badge_waiting">
         <item quantity="one">%1$d waiting</item>
         <item quantity="other">%1$d waiting</item>
+    </plurals>
+    <string name="vault_add_first">Add your first account</string>
+    <string name="vault_locked">Vault locked</string>
+    <string name="vault_unlock">Unlock</string>
+    <string name="vault_empty">No accounts yet</string>
+    <string name="vault_add">Add account</string>
+    <string name="vault_lock_now">Lock now</string>
+    <string name="vault_tap_to_generate">Tap to generate</string>
+    <string name="vault_copied">Copied</string>
+    <string name="vault_needs_reset">The vault cannot be opened</string>
+    <string name="vault_restore">Restore from a backup</string>
+    <string name="vault_new">Start a new vault</string>
+    <string name="vault_nudge_title">No backup yet</string>
+    <string name="vault_nudge_backup">Make a backup</string>
+    <string name="vault_nudge_later">Later</string>
+    <string name="vault_action_copy">Copy</string>
+    <string name="vault_action_edit">Edit</string>
+    <string name="vault_action_delete">Delete</string>
+    <string name="vault_hotp_next">Next code</string>
+    <plurals name="vault_row_description">
+        <item quantity="one">%1$s, %2$d second left</item>
+        <item quantity="other">%1$s, %2$d seconds left</item>
     </plurals>
 </resources>

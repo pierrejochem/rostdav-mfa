@@ -10,6 +10,7 @@ import app.rustmfa.vault.VaultCorruptException
 import app.rustmfa.vault.VaultKeyLostException
 import app.rustmfa.vault.VaultLockedException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -19,10 +20,10 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /** How long a copied code stays on the clipboard before the app tries to clear it. */
@@ -31,12 +32,16 @@ const val CLIPBOARD_CLEAR_MILLIS = 30_000L
 /**
  * The vault state for the Overview and the add, edit and delete flows (activity scoped).
  *
- * The [ticker] is collected only while the vault is open ([VaultUiState.Unlocked] or [VaultUiState.Empty]); each
- * tick rebuilds the rows, or shows [VaultUiState.Locked] when the session locked itself. A cancelled prompt is
+ * The [ticker] is collected only while the vault is open ([VaultUiState.Unlocked] or [VaultUiState.Empty]) and the
+ * app is in the foreground (between [appReturned] and [appLeft]); each tick rebuilds the rows, or shows
+ * [VaultUiState.Locked] when the session locked itself. A cancelled prompt is
  * never an error. A mutation that finds the vault locked unlocks and retries exactly once; when the prompt is
  * cancelled or the retry fails the same way, it emits [VaultEvent.UnlockToSave].
  *
  * Generated HOTP codes stay in [hotpCodes] until the next lock. All state is touched on the main thread only.
+ *
+ * [appScope] outlives the view model (the app-wide scope of `AppContainer`): the clipboard clear scheduled by
+ * [copy] runs there, so it still happens when the activity finishes within the 30 s.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class VaultViewModel(
@@ -46,6 +51,7 @@ class VaultViewModel(
     private val prefs: VaultPrefs,
     // the backup screen uses it
     @Suppress("unused") private val files: BackupFiles,
+    private val appScope: CoroutineScope,
     ticker: Flow<Long> = secondTicker(clock),
     private val delayer: Delayer = Delayer { delay(it) },
 ) : ViewModel() {
@@ -60,13 +66,15 @@ class VaultViewModel(
 
     private val hotpCodes = mutableMapOf<String, String>()
 
+    /** False between [appLeft] and [appReturned]: the ticker does not wake the app in the background. */
+    private val foreground = MutableStateFlow(true)
+
     init {
         refresh()
         viewModelScope.launch {
-            _state
-                .map { it is VaultUiState.Unlocked || it is VaultUiState.Empty }
+            combine(_state, foreground) { s, fg -> fg && (s is VaultUiState.Unlocked || s is VaultUiState.Empty) }
                 .distinctUntilChanged()
-                .flatMapLatest { open -> if (open) ticker else emptyFlow() }
+                .flatMapLatest { run -> if (run) ticker else emptyFlow() }
                 .collect { epochSeconds -> setState(if (gateway.isUnlocked) openState(epochSeconds) else lockedState()) }
         }
     }
@@ -87,17 +95,26 @@ class VaultViewModel(
         }
     }
 
-    fun appLeft() = gateway.appLeft()
+    fun appLeft() {
+        foreground.value = false
+        gateway.appLeft()
+    }
 
     /** An auto-lock that happened while away shows as [VaultUiState.Locked]. */
     fun appReturned() {
         gateway.appReturned()
+        foreground.value = true
         refresh()
     }
 
     /** Copies the plain (ungrouped) code and clears it again after [CLIPBOARD_CLEAR_MILLIS]. */
     fun copy(id: String) {
         launchSafely {
+            // a generated HOTP code is held in memory: a locked vault must not hand it out
+            if (!gateway.isUnlocked) {
+                reload()
+                return@launchSafely
+            }
             val code = hotpCodes[id] ?: try {
                 gateway.code(id, clock() / 1000)
             } catch (e: VaultLockedException) {
@@ -110,7 +127,7 @@ class VaultViewModel(
             }
             clipboard.copySensitive(code)
             _events.emit(VaultEvent.Copied)
-            viewModelScope.launch {
+            appScope.launch {
                 delayer.delay(CLIPBOARD_CLEAR_MILLIS)
                 clipboard.clearIfStillOurs(code)
             }

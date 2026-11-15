@@ -1,6 +1,5 @@
 package app.rustmfa.android.ui
 
-import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,7 +12,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -39,16 +37,14 @@ import app.rustmfa.android.ui.design.NumberChoice
 import app.rustmfa.android.ui.design.StatusBanner
 import app.rustmfa.android.ui.design.brandWash
 import app.rustmfa.android.ui.design.isUrgent
+import app.rustmfa.android.ui.vault.SecureWhile
 
 /** The screen with the window flag that blocks screenshots and the recents preview. */
 @Composable
 /** [revoked] shows the removed-phone result whatever the request state is. [onReconnect] gets `true` when the approval key is invalidated (the server address is kept) and `false` otherwise. */
 fun ApproveScreen(vm: ApproveViewModel, revoked: Boolean = false, onClose: () -> Unit, onReconnect: (keyInvalidated: Boolean) -> Unit) {
     val activity = LocalActivity.current
-    DisposableEffect(activity) {
-        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        onDispose { activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
-    }
+    SecureWhile(true)
     val state by vm.state.collectAsState()
     val auth: Authenticator = { signer, msg -> authenticate(activity as FragmentActivity, signer, msg) }
     ApproveContent(

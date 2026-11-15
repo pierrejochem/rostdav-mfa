@@ -44,6 +44,18 @@ import app.rustmfa.android.ui.ApproveViewModel
 import app.rustmfa.android.ui.OnboardingScreen
 import app.rustmfa.android.ui.OnboardingViewModel
 import app.rustmfa.android.ui.RustMfaTheme
+import app.rustmfa.android.ui.vault.AccountsSection
+import app.rustmfa.android.ui.vault.SecureWhile
+import app.rustmfa.android.vault.BackupFiles
+import app.rustmfa.android.vault.BiometricUnlocker
+import app.rustmfa.android.vault.VaultEvent
+import app.rustmfa.android.vault.VaultUiState
+import app.rustmfa.android.vault.VaultViewModel
+import android.net.Uri
+import androidx.activity.viewModels
+import androidx.compose.runtime.collectAsState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class MainActivity : FragmentActivity() {
     private val openChallenge = mutableStateOf<String?>(null)
@@ -53,6 +65,17 @@ class MainActivity : FragmentActivity() {
     private var sessionJob: Job? = null
     private val sessionEnd = SessionEndGate()
     private val sessionEnded = mutableStateOf(false)
+
+    /** Activity scoped: the vault state, the ticker and the lifecycle hooks. */
+    private val vault: VaultViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                val app = AppContainer.get(applicationContext)
+                // the session's auto-lock is on the monotonic clock (AppContainer); codes and prefs need wall time
+                VaultViewModel(app.vault, System::currentTimeMillis, app.clipboard, app.vaultPrefs, NoBackupFiles, app.appScope)
+            }
+        }
+    }
 
     private val askNotifications =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { refreshNotificationState() }
@@ -82,10 +105,15 @@ class MainActivity : FragmentActivity() {
     override fun onStart() {
         super.onStart()
         poller?.setForeground(true)
+        // the prompt needs a started activity and the main thread
+        AppContainer.get(applicationContext).authenticator = { withContext(Dispatchers.Main) { BiometricUnlocker(this@MainActivity).authenticate() } }
+        vault.appReturned()
     }
 
     override fun onStop() {
         poller?.setForeground(false)
+        vault.appLeft()
+        AppContainer.get(applicationContext).authenticator = AppContainer.NO_AUTHENTICATOR
         super.onStop()
     }
 
@@ -137,6 +165,19 @@ class MainActivity : FragmentActivity() {
             }
         }
         setContent {
+            val vaultState by vault.state.collectAsState()
+            val showNudge by vault.showNudge.collectAsState()
+            SecureWhile(vaultState is VaultUiState.Unlocked || vaultState == VaultUiState.Empty)
+            LaunchedEffect(Unit) {
+                vault.events.collect { e ->
+                    when (e) {
+                        // Android 13+ confirms a copy itself
+                        VaultEvent.Copied -> if (Build.VERSION.SDK_INT < 33) Toast.makeText(this@MainActivity, R.string.vault_copied, Toast.LENGTH_SHORT).show()
+                        is VaultEvent.Failed -> Toast.makeText(this@MainActivity, e.messageRes, Toast.LENGTH_LONG).show()
+                        else -> Unit // the add and edit forms (later tasks) handle the rest
+                    }
+                }
+            }
             RustMfaTheme {
                 // null while the store is read; the start destination is chosen once
                 var loaded by remember { mutableStateOf<Pair<Boolean, Enrollment?>?>(null) }
@@ -169,7 +210,22 @@ class MainActivity : FragmentActivity() {
                             }
                         },
                         home = { onOpen, onSeeAll ->
-                            HomeScreen(enrollment?.server ?: "", pendingList.value, notificationsOff.value, onOpen, onSeeAll)
+                            HomeScreen(enrollment?.server ?: "", pendingList.value, notificationsOff.value, onOpen, onSeeAll) {
+                                AccountsSection(
+                                    state = vaultState,
+                                    showNudge = showNudge,
+                                    onUnlock = vault::unlock,
+                                    onLock = vault::lock,
+                                    onAdd = {}, // the Add account screen (task 5)
+                                    onCopy = vault::copy,
+                                    onGenerate = vault::generateHotp,
+                                    onOpenMenu = {}, // the long-press sheet (task 4)
+                                    onBackup = {}, // the Backup screen (task 6)
+                                    onDismissNudge = vault::dismissNudge,
+                                    onRestore = {}, // the cannot-be-opened flow (task 7)
+                                    onNewVault = {}, // the cannot-be-opened flow (task 7)
+                                )
+                            }
                         },
                         requests = { onOpen -> RequestsScreen(pendingList.value, onOpen) },
                         enrolled = enrolled,
@@ -184,6 +240,7 @@ class MainActivity : FragmentActivity() {
                                     val e = runCatching { app.store.load() }.getOrNull()
                                     loaded = (e != null) to e
                                     if (e != null) startSession(app, e)
+                                    vault.refresh()
                                     onDone0()
                                 }
                             }
@@ -213,4 +270,11 @@ class MainActivity : FragmentActivity() {
             }
         }
     }
+}
+
+/** Backup and restore arrive with the Backup screen; nothing calls these yet. */
+private object NoBackupFiles : BackupFiles {
+    override suspend fun read(uri: Uri, maxBytes: Int): ByteArray = throw UnsupportedOperationException("no backup screen yet")
+
+    override suspend fun write(uri: Uri, bytes: ByteArray) = throw UnsupportedOperationException("no backup screen yet")
 }
