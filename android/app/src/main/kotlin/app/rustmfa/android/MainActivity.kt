@@ -23,6 +23,7 @@ import app.rustmfa.android.ui.DevicesScreen
 import app.rustmfa.android.ui.DevicesViewModel
 import app.rustmfa.android.ui.ReconnectScreen
 import app.rustmfa.android.ui.HomeScreen
+import app.rustmfa.android.ui.RequestsScreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import android.os.Bundle
@@ -167,9 +168,10 @@ class MainActivity : FragmentActivity() {
                                 DevicesScreen(vm, onThisPhoneRevoked = { restartFresh() })
                             }
                         },
-                        home = { onOpen ->
-                            HomeScreen(enrollment?.server ?: "", pendingList.value, notificationsOff.value, onOpen)
+                        home = { onOpen, onSeeAll ->
+                            HomeScreen(enrollment?.server ?: "", pendingList.value, notificationsOff.value, onOpen, onSeeAll)
                         },
+                        requests = { onOpen -> RequestsScreen(pendingList.value, onOpen) },
                         enrolled = enrolled,
                         server = enrollment?.server ?: "",
                         version = BuildConfig.VERSION_NAME,

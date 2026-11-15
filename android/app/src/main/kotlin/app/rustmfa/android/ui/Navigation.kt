@@ -1,6 +1,13 @@
 package app.rustmfa.android.ui
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import app.rustmfa.android.ui.design.GlassBar
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -22,6 +29,7 @@ import app.rustmfa.android.R
 object Dest {
     const val ONBOARDING = "onboarding"
     const val HOME = "home"
+    const val REQUESTS = "requests"
     const val APPROVE = "approve/{id}"
     const val DEVICES = "devices"
     const val SETTINGS = "settings"
@@ -30,14 +38,17 @@ object Dest {
     fun approve(id: String) = "approve/$id"
 }
 
-private data class Tab(val route: String, val label: Int, val glyph: String)
+private data class Tab(val route: String, val label: Int, val icon: Int)
 
 private val Tabs =
     listOf(
-        Tab(Dest.HOME, R.string.nav_home, "●"),
-        Tab(Dest.DEVICES, R.string.nav_devices, "▣"),
-        Tab(Dest.SETTINGS, R.string.nav_settings, "≡"),
+        Tab(Dest.HOME, R.string.nav_home, R.drawable.ic_nav_home),
+        Tab(Dest.REQUESTS, R.string.nav_requests, R.drawable.ic_nav_list),
+        Tab(Dest.SETTINGS, R.string.nav_settings, R.drawable.ic_nav_settings),
     )
+
+/** The routes that have a tab. Devices is reached from Settings and has none. */
+val TabRoutes: List<String> = Tabs.map { it.route }
 
 /** The bottom bar shows only after enrollment: the onboarding destination has none. */
 @Composable
@@ -48,7 +59,8 @@ fun AppNavigation(
     devices: @Composable () -> Unit = {},
     server: String,
     version: String,
-    home: @Composable (onOpen: (String) -> Unit) -> Unit,
+    home: @Composable (onOpen: (String) -> Unit, onSeeAll: () -> Unit) -> Unit,
+    requests: @Composable (onOpen: (String) -> Unit) -> Unit,
     onboarding: @Composable (onDone: () -> Unit) -> Unit,
     approve: @Composable (id: String, onClose: () -> Unit) -> Unit,
     nav: NavHostController = rememberNavController(),
@@ -58,10 +70,16 @@ fun AppNavigation(
     Scaffold(
         bottomBar = {
             if (route != null && route != Dest.ONBOARDING && route != Dest.RECONNECT) {
-                NavigationBar {
+                GlassBar(Modifier.fillMaxWidth()) {
+                  NavigationBar(Modifier.weight(1f), containerColor = Color.Transparent) {
                     for (t in Tabs) {
                         NavigationBarItem(
-                            selected = route == t.route,
+                            selected = route == t.route || (t.route == Dest.SETTINGS && route == Dest.DEVICES),
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.tertiary,
+                                selectedTextColor = MaterialTheme.colorScheme.tertiary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            ),
                             onClick = {
                                 nav.navigate(t.route) {
                                     popUpTo(nav.graph.findStartDestination().id) { saveState = true }
@@ -69,10 +87,11 @@ fun AppNavigation(
                                     restoreState = true
                                 }
                             },
-                            icon = { Text(t.glyph) },
+                            icon = { Icon(painterResource(t.icon), contentDescription = null) },
                             label = { Text(stringResource(t.label)) },
                         )
                     }
+                  }
                 }
             }
         },
@@ -84,12 +103,13 @@ fun AppNavigation(
                 }
             }
             composable(Dest.RECONNECT) { reconnect() }
-            composable(Dest.HOME) { home { id -> nav.navigate(Dest.approve(id)) } }
+            composable(Dest.HOME) { home({ id -> nav.navigate(Dest.approve(id)) }, { nav.navigate(Dest.REQUESTS) }) }
+            composable(Dest.REQUESTS) { requests { id -> nav.navigate(Dest.approve(id)) } }
             composable(Dest.APPROVE, arguments = listOf(navArgument("id") { type = NavType.StringType })) { e ->
                 approve(e.arguments?.getString("id").orEmpty()) { nav.popBackStack() }
             }
             composable(Dest.DEVICES) { devices() }
-            composable(Dest.SETTINGS) { SettingsScreen(server, version) }
+            composable(Dest.SETTINGS) { SettingsScreen(server, version, onOpenDevices = { nav.navigate(Dest.DEVICES) }) }
         }
     }
 }
