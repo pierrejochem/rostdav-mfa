@@ -31,6 +31,8 @@ class FakeSeedStore(var stored: List<OtpAccount> = emptyList()) : SeedStore {
         stored = lastSaved
     }
 
+    override suspend fun exists(): Boolean = stored.isNotEmpty()
+
     override suspend fun reset() {
         resets++
         stored = emptyList()
@@ -352,6 +354,7 @@ class VaultSessionTest {
             val gate = CompletableDeferred<Unit>()
             override suspend fun load(): List<OtpAccount> { gate.await(); return listOf(totp.copy(secret = rfc4226.copyOf())) }
             override suspend fun save(accounts: List<OtpAccount>) {}
+            override suspend fun exists(): Boolean = true
             override suspend fun reset() {}
         }
         val s2 = VaultSession(slow, { now })

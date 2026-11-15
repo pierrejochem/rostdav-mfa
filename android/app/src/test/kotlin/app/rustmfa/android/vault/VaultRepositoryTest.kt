@@ -32,6 +32,8 @@ class VaultRepositoryTest {
 
             override suspend fun save(accounts: List<OtpAccount>) {}
 
+            override suspend fun exists(): Boolean = false
+
             override suspend fun reset() {
                 events += "store.reset"
             }
@@ -42,8 +44,16 @@ class VaultRepositoryTest {
         }
     private val session = VaultSession(store, { now })
 
-    private fun repository(authenticate: suspend () -> Unit = { events += "auth" }) =
-        VaultRepository(session, authenticate)
+    private fun repository(
+        authenticate: suspend () -> Unit = { events += "auth" },
+        exists: suspend () -> Boolean = { false },
+    ) = VaultRepository(session, authenticate, exists)
+
+    @Test
+    fun `hasVault delegates to exists`() = runTest {
+        assertTrue(repository(exists = { true }).hasVault())
+        assertFalse(repository(exists = { false }).hasVault())
+    }
 
     @Test
     fun `unlock authenticates before the store loads`() = runTest {
@@ -55,7 +65,7 @@ class VaultRepositoryTest {
 
     @Test
     fun `a failed authentication leaves the session locked and the store untouched`() = runTest {
-        val repo = repository { throw VaultAuthRequiredException() }
+        val repo = repository(authenticate = { throw VaultAuthRequiredException() })
         assertFailsWith<VaultAuthRequiredException> { repo.unlock() }
         assertFalse(session.isUnlocked)
         assertFalse("load" in events)
@@ -155,10 +165,10 @@ class VaultRepositoryTest {
         val vault = VaultSession(EncryptedSeedStore(keys, MemoryBlobs()), { now })
         val gate = CompletableDeferred<Unit>()
         var prompts = 0
-        val repo = VaultRepository(vault) {
+        val repo = VaultRepository(vault, {
             prompts++
             gate.await()
-        }
+        }, { false })
         val first = async { repo.unlock() }
         val second = async { repo.unlock() }
         runCurrent()
@@ -181,7 +191,7 @@ class VaultRepositoryTest {
 
         val vault = VaultSession(EncryptedSeedStore(keys, blobs), { now })
         val authGate = CompletableDeferred<Unit>()
-        val repo = VaultRepository(vault) { authGate.await() }
+        val repo = VaultRepository(vault, { authGate.await() }, { false })
         val clearGate = CompletableDeferred<Unit>()
         blobs.clearGate = clearGate
         val unlocking = async { runCatching { repo.unlock() } }

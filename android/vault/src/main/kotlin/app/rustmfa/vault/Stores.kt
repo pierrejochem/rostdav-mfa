@@ -4,6 +4,12 @@ interface SeedStore {
     suspend fun load(): List<OtpAccount>
     suspend fun save(accounts: List<OtpAccount>)
 
+    /**
+     * True when a vault blob exists. Never decrypts, never needs authentication, and never throws for a missing
+     * blob.
+     */
+    suspend fun exists(): Boolean
+
     /** Drops the in-memory data key. */
     fun lock() {}
 

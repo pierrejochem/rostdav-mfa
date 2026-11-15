@@ -54,12 +54,12 @@ class AppContainer private constructor(private val context: Context) {
 
     /** The auto-lock clock is monotonic, so changing the wall clock cannot keep the vault open. */
     val vault: VaultRepository by lazy {
+        val seedStore = EncryptedSeedStore(KeystoreKeyWrapper(context), DataStoreBlobStore(context, "vault"))
         VaultRepository(
-            VaultSession(
-                EncryptedSeedStore(KeystoreKeyWrapper(context), DataStoreBlobStore(context, "vault")),
-                SystemClock::elapsedRealtime,
-            ),
-        ) { authenticator() }
+            VaultSession(seedStore, SystemClock::elapsedRealtime),
+            { authenticator() },
+            { seedStore.exists() },
+        )
     }
 
     fun poller(e: Enrollment) = PendingPoller(signedApi(e), skew, Delayer { delay(it) })

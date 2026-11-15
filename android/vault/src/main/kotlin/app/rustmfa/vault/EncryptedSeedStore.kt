@@ -97,6 +97,13 @@ class EncryptedSeedStore(
         }
     }
 
+    override suspend fun exists(): Boolean =
+        try {
+            blobStore.read() != null
+        } catch (e: VaultCorruptException) {
+            true // a damaged file is still a vault the user must reset
+        }
+
     override fun lock() {
         synchronized(monitor) {
             generation++

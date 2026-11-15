@@ -13,8 +13,15 @@ import kotlinx.coroutines.sync.withLock
  * destroyed key). So [reset] waits for an unlock whose prompt is showing. [lock], [appLeft] and [appReturned] never
  * take the mutex.
  */
-class VaultRepository(val session: VaultSession, private val authenticate: suspend () -> Unit) {
+class VaultRepository(
+    val session: VaultSession,
+    private val authenticate: suspend () -> Unit,
+    private val exists: suspend () -> Boolean,
+) {
     private val gate = Mutex()
+
+    /** True when a vault is stored. Needs no authentication and never decrypts. */
+    suspend fun hasVault(): Boolean = exists()
 
     /** Does nothing when the session is already unlocked, so no second prompt appears. */
     suspend fun unlock() {

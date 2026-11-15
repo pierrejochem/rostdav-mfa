@@ -75,6 +75,52 @@ class EncryptedSeedStoreTest {
     }
 
     @Test
+    fun existsIsFalseOnAFreshStore() = runTest {
+        assertFalse(store().exists())
+    }
+
+    @Test
+    fun existsIsTrueAfterASave() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        assertTrue(store().exists())
+    }
+
+    @Test
+    fun existsIsFalseAfterReset() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        s.reset()
+        assertFalse(s.exists())
+    }
+
+    @Test
+    fun existsIsTrueWhenTheBlobIsCorrupt() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        val b = blobs.bytes!!
+        b[b.size - 1] = (b[b.size - 1].toInt() xor 1).toByte()
+        assertTrue(store().exists())
+    }
+
+    @Test
+    fun existsDoesNotTouchTheKeyWrapper() = runTest {
+        val s = store()
+        s.load()
+        s.save(accounts)
+        val creates = keys.createCalls
+        val unwraps = keys.unwrapCalls
+        keys.authOpen = false
+        assertTrue(store().exists())
+        assertEquals(creates, keys.createCalls)
+        assertEquals(unwraps, keys.unwrapCalls)
+        assertFalse(EncryptedSeedStore(FakeKeyWrapper(), MemoryBlobStore()).exists())
+    }
+
+    @Test
     fun flippedByteIsCorrupt() = runTest {
         val s = store()
         s.load()
