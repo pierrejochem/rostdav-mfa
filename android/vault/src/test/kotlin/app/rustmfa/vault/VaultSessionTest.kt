@@ -310,4 +310,72 @@ class VaultSessionTest {
         assertTrue(job.await().exceptionOrNull() is VaultLockedException)
         assertEquals(listOf("t1", "h1"), s.accounts().map { it.id })
     }
+
+    @Test
+    fun overlappingNextHotpReturnDifferentCodes() = runTest {
+        val s = session()
+        s.open()
+        val gate = CompletableDeferred<Unit>()
+        store.saveGate = gate
+        val a = async { s.nextHotp("h1") }
+        val b = async { s.nextHotp("h1") }
+        runCurrent()
+        gate.complete(Unit)
+        runCurrent()
+        assertEquals(setOf("755224", "287082"), setOf(a.await(), b.await()))
+        assertEquals(2L, s.accounts().first { it.id == "h1" }.counter)
+        assertEquals(2, store.saves)
+    }
+
+    @Test
+    fun overlappingAddAndNextHotpKeepBoth() = runTest {
+        val s = session()
+        s.open()
+        val gate = CompletableDeferred<Unit>()
+        store.saveGate = gate
+        val a = async { s.add(OtpAccount("x", OtpType.TOTP, "N", "n", byteArrayOf(9))) }
+        val b = async { s.nextHotp("h1") }
+        runCurrent()
+        gate.complete(Unit)
+        runCurrent()
+        a.await()
+        b.await()
+        val list = s.accounts()
+        assertEquals(3, list.size)
+        assertEquals(1L, list.first { it.id == "h1" }.counter)
+    }
+
+    @Test
+    fun queuedMutationFailsAfterLockWithoutSaving() = runTest {
+        val s = session()
+        s.open()
+        val gate = CompletableDeferred<Unit>()
+        store.saveGate = gate
+        val first = async { runCatching { s.remove("t1") } }
+        val queued = async { runCatching { s.nextHotp("h1") } }
+        runCurrent()
+        s.lock()
+        s.open()
+        gate.complete(Unit)
+        runCurrent()
+        assertTrue(first.await().exceptionOrNull() is VaultLockedException)
+        assertTrue(queued.await().exceptionOrNull() is VaultLockedException)
+        assertEquals(1, store.saves) // only the save already in flight; the queued one never reached the store
+        assertEquals(listOf("t1", "h1"), s.accounts().map { it.id })
+    }
+
+    @Test
+    fun lockDoesNotWaitForAGatedSave() = runTest {
+        val s = session()
+        s.open()
+        store.saveGate = CompletableDeferred()
+        val job = async { runCatching { s.nextHotp("h1") } }
+        runCurrent()
+        s.lock()
+        assertFalse(s.isUnlocked)
+        assertEquals(1, store.lockCalls)
+        store.saveGate!!.complete(Unit)
+        runCurrent()
+        job.await()
+    }
 }

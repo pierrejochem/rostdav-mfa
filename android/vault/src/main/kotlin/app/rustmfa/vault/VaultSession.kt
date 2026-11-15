@@ -1,5 +1,8 @@
 package app.rustmfa.vault
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
 data class ImportResult(val added: Int, val skipped: Int)
 
 /**
@@ -12,7 +15,9 @@ data class ImportResult(val added: Int, val skipped: Int)
  * commits only if it is unchanged. Otherwise it zeroes what it built, leaves the session locked and throws
  * [VaultLockedException], so an operation in flight when [lock] ran cannot resurrect the session. A mutation is
  * committed to memory only after its save succeeded, so a failed save leaves the previous list in place.
- * Concurrent mutations are not serialized against each other; the UI issues one at a time.
+ * Mutations are serialized by a coroutine [Mutex] (held across the save, which is fine: the monitor is the one
+ * that must not be). [lock], [appLeft], [appReturned], [accounts] and [code] never take it. A mutation records the
+ * generation before queueing, so one that waited while [lock] ran fails without calling the store.
  *
  * The session owns its secret arrays: secrets are copied in and out, and zeroed on [lock].
  */
@@ -23,6 +28,7 @@ class VaultSession(
     private val newId: () -> String = { newAccountId() },
 ) {
     private val monitor = Any()
+    private val mutations = Mutex()
     private var current: List<OtpAccount>? = null
     private var generation = 0L
     private var leftAt: Long? = null
@@ -139,35 +145,41 @@ class VaultSession(
      * [change] returns the new list (sharing unchanged accounts with the old one) or null for "nothing to save".
      */
     private suspend fun mutate(change: (List<OtpAccount>) -> List<OtpAccount>?) {
-        val (gen, snapshot) = synchronized(monitor) { generation to requireOpen().map { it.owned() } }
-        val next = try {
-            change(snapshot)
-        } catch (e: Throwable) {
-            snapshot.zero()
-            throw e
-        }
-        if (next == null) {
-            snapshot.zero()
-            return
-        }
-        try {
-            store.save(next.map { it.owned() })
-        } catch (e: Throwable) {
-            next.zero()
-            snapshot.zero()
-            throw e
-        }
-        synchronized(monitor) {
-            if (generation != gen || current == null) {
+        val gen = synchronized(monitor) { requireOpen(); generation }
+        mutations.withLock {
+            val snapshot = synchronized(monitor) {
+                if (generation != gen) throw VaultLockedException()
+                requireOpen().map { it.owned() }
+            }
+            val next = try {
+                change(snapshot)
+            } catch (e: Throwable) {
+                snapshot.zero()
+                throw e
+            }
+            if (next == null) {
+                snapshot.zero()
+                return
+            }
+            try {
+                store.save(next.map { it.owned() })
+            } catch (e: Throwable) {
                 next.zero()
                 snapshot.zero()
-                throw VaultLockedException()
+                throw e
             }
-            current?.zero()
-            current = next
+            synchronized(monitor) {
+                if (generation != gen || current == null) {
+                    next.zero()
+                    snapshot.zero()
+                    throw VaultLockedException()
+                }
+                current?.zero()
+                current = next
+            }
+            // Arrays of accounts the change replaced or dropped were copies owned by this call.
+            snapshot.filter { old -> next.none { it.secret === old.secret } }.zero()
         }
-        // Arrays of accounts the change replaced or dropped were copies owned by this call.
-        snapshot.filter { old -> next.none { it.secret === old.secret } }.zero()
     }
 
     private fun requireOpen(): List<OtpAccount> = current ?: throw VaultLockedException()
