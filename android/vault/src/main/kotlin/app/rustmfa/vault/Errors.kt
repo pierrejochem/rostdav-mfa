@@ -20,3 +20,15 @@ class BackupFormatException(message: String) : Exception(message)
 
 /** Wrong passphrase or damaged file; the two cannot be told apart. */
 class BackupDecryptException : Exception("wrong passphrase or damaged file")
+
+/** The vault is locked or was never loaded. */
+class VaultLockedException : Exception("vault is locked")
+
+/** The Keystore authentication window is not open. */
+class VaultAuthRequiredException : Exception("authentication required")
+
+/** The vault blob is damaged, truncated, or not encrypted under this data key. */
+class VaultCorruptException : Exception("vault data is corrupt")
+
+/** A vault blob exists but the wrapped data key is gone. */
+class VaultKeyLostException : Exception("vault key is lost")
