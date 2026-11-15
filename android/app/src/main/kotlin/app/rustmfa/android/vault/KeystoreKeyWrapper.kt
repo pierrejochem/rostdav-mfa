@@ -13,6 +13,7 @@ import app.rustmfa.vault.VaultAuthRequiredException
 import app.rustmfa.vault.VaultKeyLostException
 import java.security.GeneralSecurityException
 import java.security.KeyStore
+import java.security.UnrecoverableKeyException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -107,8 +108,9 @@ class KeystoreKeyWrapper(
         val stored = wrapped.read() ?: throw VaultKeyLostException()
         try {
             if (stored.size <= IV_BYTES + TAG_BYTES) throw VaultKeyLostException()
-            val key = keyStore().getKey(alias, null) as? SecretKey ?: throw VaultKeyLostException()
             try {
+                // inside the mapped try: on keystore2 an invalidated key can fail here with UnrecoverableKeyException
+                val key = keyStore().getKey(alias, null) as? SecretKey ?: throw VaultKeyLostException()
                 val cipher = Cipher.getInstance(TRANSFORMATION)
                 cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BYTES * 8, stored, 0, IV_BYTES))
                 cipher.doFinal(stored, IV_BYTES, stored.size - IV_BYTES)
@@ -122,25 +124,10 @@ class KeystoreKeyWrapper(
         }
     }
 
-    /**
-     * The Keystore reports a closed window as [UserNotAuthenticatedException], usually thrown directly by
-     * `Cipher.init`, but it can arrive as the cause of another exception, so the cause chain is searched.
-     * A tag mismatch means the stored bytes were not wrapped by this key: the data key is unrecoverable.
-     */
-    private fun mapUnwrapFailure(e: Exception): Exception = when {
-        e.has<UserNotAuthenticatedException>() -> VaultAuthRequiredException()
-        e.has<KeyPermanentlyInvalidatedException>() -> VaultKeyLostException()
-        e.has<javax.crypto.AEADBadTagException>() -> VaultKeyLostException()
-        else -> e
-    }
-
     override suspend fun destroy(): Unit = withContext(Dispatchers.IO) {
         deleteKey()
         wrapped.clear()
     }
-
-    private inline fun <reified T : Throwable> Throwable.has(): Boolean =
-        generateSequence(this) { it.cause.takeIf { c -> c !== it } }.take(MAX_CAUSES).any { it is T }
 
     private companion object {
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
@@ -148,6 +135,26 @@ class KeystoreKeyWrapper(
         const val IV_BYTES = 12
         const val TAG_BYTES = 16
         const val AUTH_WINDOW_SECONDS = 10
-        const val MAX_CAUSES = 16
     }
+}
+
+private const val MAX_CAUSES = 16
+
+private inline fun <reified T : Throwable> Throwable.has(): Boolean =
+    generateSequence(this) { it.cause.takeIf { c -> c !== it } }.take(MAX_CAUSES).any { it is T }
+
+/**
+ * Maps a failure of `unwrap` to the vault's exceptions; anything unrecognised is returned unchanged, for the caller
+ * to rethrow. The Keystore reports a closed window as [UserNotAuthenticatedException], usually thrown directly by
+ * `Cipher.init`, but it can arrive as the cause of another exception, so the cause chain is searched.
+ * A tag mismatch means the stored bytes were not wrapped by this key: the data key is unrecoverable, and so is a key
+ * the Keystore reports as invalidated or unrecoverable.
+ */
+internal fun mapUnwrapFailure(e: Exception): Exception = when {
+    e.has<UserNotAuthenticatedException>() -> VaultAuthRequiredException()
+    e.has<KeyPermanentlyInvalidatedException>() -> VaultKeyLostException()
+    e.has<javax.crypto.AEADBadTagException>() -> VaultKeyLostException()
+    // keystore2 (API 31+) can report a key invalidated by removing the lock screen this way, from getKey
+    e.has<UnrecoverableKeyException>() -> VaultKeyLostException()
+    else -> e
 }
