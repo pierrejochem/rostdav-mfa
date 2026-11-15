@@ -2,10 +2,12 @@ package app.rustmfa.android.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.lerp
 import app.rustmfa.android.ui.design.Tokens
 import app.rustmfa.android.ui.design.rostdavTypography
@@ -46,5 +48,9 @@ internal fun darkScheme(): ColorScheme =
 
 @Composable
 fun RustMfaTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (dark) darkScheme() else lightScheme(), typography = rostdavTypography(), content = content)
+    val scheme = if (dark) darkScheme() else lightScheme()
+    MaterialTheme(colorScheme = scheme, typography = rostdavTypography()) {
+        // text outside a Surface would otherwise be black, unreadable on the dark paper
+        CompositionLocalProvider(LocalContentColor provides scheme.onBackground, content = content)
+    }
 }
