@@ -2,6 +2,22 @@ package app.rustmfa.android.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.dp
+import java.util.Locale
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -47,6 +63,39 @@ class OnboardingScreenTest {
             rule.onAllNodesWithTextCount("Camera access was denied. You can still enter the address and token by hand.") == 1
         }
         rule.onNodeWithText("Enter by hand").assertExists()
+    }
+
+    @Test
+    fun startScreenShowsTheWordmarkAndTallButtons() {
+        rule.setContent { RustMfaTheme { OnboardingStart(onScan = {}, onManual = {}) } }
+        rule.onNodeWithContentDescription("rostdav-mfa").assertIsDisplayed()
+        rule.onNodeWithText("Scan QR code").assertHeightIsAtLeast(56.dp)
+        rule.onNodeWithText("Enter by hand").assertHeightIsAtLeast(56.dp)
+    }
+
+    @Test
+    fun germanLabelsAreNotClippedAtTheDefaultFontScale() {
+        val base = InstrumentationRegistry.getInstrumentation().targetContext
+        val conf = Configuration(base.resources.configuration).apply { setLocale(Locale.GERMAN) }
+        val de = base.createConfigurationContext(conf)
+        rule.setContent {
+            CompositionLocalProvider(LocalContext provides de, LocalConfiguration provides conf) {
+                RustMfaTheme { OnboardingStart(onScan = {}, onManual = {}) }
+            }
+        }
+        for (label in listOf(de.getString(app.rustmfa.android.R.string.scan_button), de.getString(app.rustmfa.android.R.string.manual_button))) {
+            rule.onNodeWithText(label).assertIsDisplayed()
+            val layout = textLayout(rule.onNodeWithText(label).fetchSemanticsNode().config)
+            assertEquals(1, layout.lineCount, "'$label' wraps")
+            assertTrue(layout.multiParagraph.maxIntrinsicWidth <= layout.size.width, "'$label' is clipped: ${layout.multiParagraph.maxIntrinsicWidth} > ${layout.size.width}")
+            assertFalse(layout.didOverflowHeight, "'$label' overflows its height")
+        }
+    }
+
+    private fun textLayout(config: androidx.compose.ui.semantics.SemanticsConfiguration): TextLayoutResult {
+        val results = mutableListOf<TextLayoutResult>()
+        config.getOrNull(SemanticsActions.GetTextLayoutResult)?.action?.invoke(results)
+        return results.first()
     }
 
     private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.onAllNodesWithTextCount(t: String) =
