@@ -8,3 +8,4 @@ docs/*.png
 
 __pycache__/
 *.pyc
+/graphify-out/
